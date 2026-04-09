@@ -188,18 +188,18 @@ export default function TestPage() {
       <Navbar />
       <div className="pt-20 pb-16">
         {/* Hero Section */}
-        <section className="border-b border-border/50 bg-gradient-to-br from-background via-secondary/10 to-primary/5">
+        <section className="border-b border-[#1F2937]/30 bg-gradient-to-br from-[#0B1220] via-[#111827]/50 to-[#0B1220]">
           <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
             <div className="grid gap-8 items-center md:grid-cols-2">
-              <div className="animate-slide-up">
-                <h1 className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl" style={{ fontFamily: "var(--font-heading)" }}>
+              <div className="animate-fade-in-up">
+                <h1 className="mb-4 text-3xl font-bold tracking-tight text-[#E5E7EB] sm:text-4xl" style={{ fontFamily: "var(--font-heading)" }}>
                   Voice Recording Test
                 </h1>
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                <p className="text-lg text-[#9CA3AF] leading-relaxed">
                   Record your voice for biomarker analysis. Find a quiet environment and speak naturally. Our AI will analyze your voice for potential Parkinson's Disease indicators.
                 </p>
               </div>
-              <div className="hidden md:flex justify-center animate-float-in" style={{ animationDelay: "0.2s" }}>
+              <div className="hidden md:flex justify-center animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
                 <div className="w-40 h-40">
                   <AnimatedVoiceWaves />
                 </div>
@@ -211,19 +211,19 @@ export default function TestPage() {
         {/* Main Content */}
         <div className="mx-auto max-w-4xl px-6 py-16 sm:py-24">
           {/* Recording Instructions */}
-          <Card className="mb-8 border-border/50 bg-blue-50/50 dark:bg-blue-950/20">
+          <Card className="mb-8 border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm hover-lift-animation">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-primary" />
+              <CardTitle className="flex items-center gap-2 text-[#E5E7EB]">
+                <AlertCircle className="h-5 w-5 text-[#22D3EE]" />
                 Recording Instructions
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>1. Find a quiet environment with minimal background noise</p>
-              <p>2. Use a good quality microphone for best results</p>
-              <p>3. Speak naturally and clearly (record for at least 10 seconds)</p>
-              <p>4. Avoid forced speech or shouting</p>
-              <p>5. Allow 2-3 seconds of silence at the end before stopping</p>
+            <CardContent className="space-y-2 text-sm text-[#9CA3AF]">
+              <p className="flex items-start gap-3"><span className="text-[#22D3EE] font-bold">1.</span> Find a quiet environment with minimal background noise</p>
+              <p className="flex items-start gap-3"><span className="text-[#22D3EE] font-bold">2.</span> Use a good quality microphone for best results</p>
+              <p className="flex items-start gap-3"><span className="text-[#22D3EE] font-bold">3.</span> Speak naturally and clearly (record for at least 10 seconds)</p>
+              <p className="flex items-start gap-3"><span className="text-[#22D3EE] font-bold">4.</span> Avoid forced speech or shouting</p>
+              <p className="flex items-start gap-3"><span className="text-[#22D3EE] font-bold">5.</span> Allow 2-3 seconds of silence at the end before stopping</p>
             </CardContent>
           </Card>
 
@@ -282,41 +282,48 @@ export default function TestPage() {
 
           {/* Waveform Visualization */}
           {isRecording && (
-            <Card className="mb-8 border-border/50 bg-card/50 backdrop-blur-sm">
+            <Card className="mb-8 border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm animate-fade-in-up">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Volume2 className="h-5 w-5 text-primary" />
+                <CardTitle className="flex items-center gap-2 text-[#E5E7EB]">
+                  <Volume2 className="h-5 w-5 text-[#22D3EE] animate-pulse" />
                   Live Audio Visualization
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <canvas
-                  ref={canvasRef}
-                  width={800}
-                  height={200}
-                  className="w-full rounded-lg border border-border/50 bg-slate-950/10"
-                />
+                <div className="rounded-lg border border-[#1F2937]/60 bg-gradient-to-b from-[#111827]/50 to-[#0B1220]/50 p-2">
+                  <canvas
+                    ref={canvasRef}
+                    width={800}
+                    height={200}
+                    className="w-full rounded-lg"
+                  />
+                </div>
               </CardContent>
             </Card>
           )}
 
           {/* Recording Controls */}
           {audioURL && !isAnalyzing && !analysisResults && (
-            <Card className="mb-8 border-border/50">
+            <Card className="mb-8 border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm animate-fade-in-up hover-lift-animation">
               <CardHeader>
-                <CardTitle>Recording Ready</CardTitle>
-                <CardDescription>Your voice has been recorded successfully</CardDescription>
+                <CardTitle className="text-[#E5E7EB] flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#22D3EE] animate-pulse" />
+                  Recording Ready
+                </CardTitle>
+                <CardDescription className="text-[#9CA3AF]">Your voice has been recorded successfully</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <audio controls className="w-full rounded-lg bg-secondary/50 p-2">
-                  <source src={audioURL} type="audio/wav" />
-                  Your browser does not support the audio element.
-                </audio>
+                <div className="rounded-lg border border-[#1F2937]/60 bg-[#0B1220]/60 p-4">
+                  <audio controls className="w-full accent-[#22D3EE]">
+                    <source src={audioURL} type="audio/wav" />
+                    Your browser does not support the audio element.
+                  </audio>
+                </div>
                 <div className="flex gap-3 sm:flex-row flex-col">
-                  <Button onClick={analyzeVoice} className="flex-1 bg-primary hover:bg-primary/90">
+                  <Button onClick={analyzeVoice} className="flex-1 bg-gradient-to-r from-[#22D3EE] to-[#06B6D4] hover:from-[#06B6D4] hover:to-[#0891B2] text-[#0B1220] font-semibold transform transition-transform hover:scale-105">
                     Analyze Voice
                   </Button>
-                  <Button onClick={reset} variant="outline" className="flex-1">
+                  <Button onClick={reset} variant="outline" className="flex-1 border-[#1F2937]/60 text-[#E5E7EB] hover:bg-[#1F2937]/20">
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Record Again
                   </Button>
@@ -327,73 +334,71 @@ export default function TestPage() {
 
           {/* Analysis Results */}
           {isAnalyzing && (
-            <Card className="mb-8 border-border/50 bg-card/50 backdrop-blur-sm">
+            <Card className="mb-8 border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm animate-fade-in-up">
               <CardHeader>
-                <CardTitle>Analyzing Voice...</CardTitle>
+                <CardTitle className="text-[#E5E7EB]">Analyzing Voice...</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex justify-center">
-                  <div className="flex gap-2">
-                    {[0, 1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="h-3 w-3 rounded-full bg-primary animate-bounce"
-                        style={{ animationDelay: `${i * 0.2}s` }}
-                      />
-                    ))}
-                  </div>
+                <div className="flex justify-center gap-3 py-6">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="h-3 w-3 rounded-full bg-gradient-to-r from-[#22D3EE] to-[#8B5CF6] animate-bounce"
+                      style={{ animationDelay: `${i * 0.2}s` }}
+                    />
+                  ))}
                 </div>
               </CardContent>
             </Card>
           )}
 
           {analysisResults && (
-            <Card className="mb-8 border-border/50 bg-card/50 backdrop-blur-sm">
+            <Card className="mb-8 border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm animate-fade-in-up hover-lift-animation">
               <CardHeader>
-                <CardTitle>Biomarker Analysis Results</CardTitle>
-                <CardDescription>Your voice analysis summary (for informational purposes only)</CardDescription>
+                <CardTitle className="text-[#E5E7EB]">Biomarker Analysis Results</CardTitle>
+                <CardDescription className="text-[#9CA3AF]">Your voice analysis summary (for informational purposes only)</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-                    <p className="text-sm text-muted-foreground">Jitter</p>
-                    <p className="mt-2 text-2xl font-bold text-primary">{analysisResults.jitter}%</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Frequency variation</p>
+                  <div className="rounded-lg border border-[#22D3EE]/30 bg-gradient-to-br from-[#22D3EE]/10 to-[#06B6D4]/5 p-4 hover-lift-animation">
+                    <p className="text-sm text-[#9CA3AF]">Jitter</p>
+                    <p className="mt-2 text-2xl font-bold text-[#22D3EE] animate-glow-cyan">{analysisResults.jitter}%</p>
+                    <p className="mt-1 text-xs text-[#6B7280]">Frequency variation</p>
                   </div>
-                  <div className="rounded-lg border border-accent/20 bg-accent/5 p-4">
-                    <p className="text-sm text-muted-foreground">Shimmer</p>
-                    <p className="mt-2 text-2xl font-bold text-accent">{analysisResults.shimmer} dB</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Amplitude variation</p>
+                  <div className="rounded-lg border border-[#8B5CF6]/30 bg-gradient-to-br from-[#8B5CF6]/10 to-[#A78BFA]/5 p-4 hover-lift-animation">
+                    <p className="text-sm text-[#9CA3AF]">Shimmer</p>
+                    <p className="mt-2 text-2xl font-bold text-[#8B5CF6] animate-glow-purple">{analysisResults.shimmer} dB</p>
+                    <p className="mt-1 text-xs text-[#6B7280]">Amplitude variation</p>
                   </div>
-                  <div className="rounded-lg border border-blue-400/20 bg-blue-400/5 p-4">
-                    <p className="text-sm text-muted-foreground">HNR</p>
-                    <p className="mt-2 text-2xl font-bold text-blue-400">{analysisResults.hnr} dB</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Voice clarity</p>
+                  <div className="rounded-lg border border-[#06B6D4]/30 bg-gradient-to-br from-[#06B6D4]/10 to-[#0891B2]/5 p-4 hover-lift-animation">
+                    <p className="text-sm text-[#9CA3AF]">HNR</p>
+                    <p className="mt-2 text-2xl font-bold text-[#06B6D4]">{analysisResults.hnr} dB</p>
+                    <p className="mt-1 text-xs text-[#6B7280]">Voice clarity</p>
                   </div>
-                  <div className="rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-4">
-                    <p className="text-sm text-muted-foreground">F0</p>
+                  <div className="rounded-lg border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-cyan-400/5 p-4 hover-lift-animation">
+                    <p className="text-sm text-[#9CA3AF]">F0</p>
                     <p className="mt-2 text-2xl font-bold text-cyan-400">{analysisResults.f0} Hz</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Fundamental frequency</p>
+                    <p className="mt-1 text-xs text-[#6B7280]">Fundamental frequency</p>
                   </div>
-                  <div className="rounded-lg border border-teal-400/20 bg-teal-400/5 p-4">
-                    <p className="text-sm text-muted-foreground">DDA</p>
+                  <div className="rounded-lg border border-teal-500/30 bg-gradient-to-br from-teal-500/10 to-teal-400/5 p-4 hover-lift-animation">
+                    <p className="text-sm text-[#9CA3AF]">DDA</p>
                     <p className="mt-2 text-2xl font-bold text-teal-400">{analysisResults.dda}%</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Delta amplitude</p>
+                    <p className="mt-1 text-xs text-[#6B7280]">Delta amplitude</p>
                   </div>
-                  <div className="rounded-lg border border-green-400/20 bg-green-400/5 p-4">
-                    <p className="text-sm text-muted-foreground">PPE</p>
-                    <p className="mt-2 text-2xl font-bold text-green-400">{analysisResults.ppe}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Pitch perturbation</p>
+                  <div className="rounded-lg border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-400/5 p-4 hover-lift-animation">
+                    <p className="text-sm text-[#9CA3AF]">PPE</p>
+                    <p className="mt-2 text-2xl font-bold text-emerald-400">{analysisResults.ppe}</p>
+                    <p className="mt-1 text-xs text-[#6B7280]">Pitch perturbation</p>
                   </div>
                 </div>
 
                 <div className="mt-8 flex gap-3 sm:flex-row flex-col">
                   <a href="/report" className="flex-1">
-                    <Button className="w-full bg-primary hover:bg-primary/90">
+                    <Button className="w-full bg-gradient-to-r from-[#22D3EE] to-[#06B6D4] hover:from-[#06B6D4] hover:to-[#0891B2] text-[#0B1220] font-semibold transform transition-transform hover:scale-105">
                       View Full Report
                     </Button>
                   </a>
-                  <Button onClick={reset} variant="outline" className="flex-1">
+                  <Button onClick={reset} variant="outline" className="flex-1 border-[#1F2937]/60 text-[#E5E7EB] hover:bg-[#1F2937]/20">
                     <RotateCcw className="mr-2 h-4 w-4" />
                     New Test
                   </Button>

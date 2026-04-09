@@ -88,34 +88,34 @@ export default function Home() {
       <Navbar />
       <div className="pt-20 pb-16">
         {/* Hero Section */}
-        <section className="relative overflow-hidden border-b border-border/50 bg-gradient-to-br from-background via-secondary/10 to-primary/5">
+        <section className="relative overflow-hidden border-b border-[#1F2937]/30 bg-gradient-to-br from-[#0B1220] via-[#111827]/30 to-[#0B1220]">
           <div className="mx-auto max-w-7xl px-6 py-16 sm:py-28">
             <div className="grid gap-12 items-center md:grid-cols-2">
               {/* Content */}
-              <div className="animate-slide-up">
-                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2">
-                  <Brain className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold text-primary">Early Detection Matters</span>
+              <div className="animate-fade-in-up">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#22D3EE]/20 to-[#8B5CF6]/20 px-4 py-2 border border-[#22D3EE]/30">
+                  <Brain className="h-4 w-4 text-[#22D3EE]" />
+                  <span className="text-sm font-semibold text-[#22D3EE]">Early Detection Matters</span>
                 </div>
-                <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl" style={{ fontFamily: "var(--font-heading)" }}>
+                <h1 className="mb-6 text-4xl font-bold tracking-tight text-[#E5E7EB] sm:text-5xl" style={{ fontFamily: "var(--font-heading)" }}>
                   Parkinson&apos;s Disease Screening
                 </h1>
-                <p className="mb-8 text-lg text-muted-foreground sm:text-xl leading-relaxed">
+                <p className="mb-8 text-lg text-[#9CA3AF] sm:text-xl leading-relaxed">
                   AI-powered voice analysis to detect early biomarkers of Parkinson&apos;s Disease. Non-invasive, accessible, and clinically informed.
                 </p>
                 <div className="flex flex-col gap-4 sm:flex-row">
-                  <a href="/test" className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors hover:scale-105 transform">
+                  <a href="/test" className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#22D3EE] to-[#06B6D4] px-8 py-3 text-base font-semibold text-[#0B1220] hover:from-[#06B6D4] hover:to-[#0891B2] transition-all transform hover:scale-105 shadow-lg shadow-[#22D3EE]/20">
                     <Mic className="h-5 w-5" />
                     Start Voice Test
                   </a>
-                  <a href="#information" className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-8 py-3 text-base font-semibold text-foreground hover:bg-secondary transition-colors hover:scale-105 transform">
+                  <a href="#information" className="inline-flex items-center justify-center rounded-lg border border-[#1F2937]/60 bg-[#111827]/50 px-8 py-3 text-base font-semibold text-[#E5E7EB] hover:bg-[#111827]/80 hover:border-[#22D3EE]/40 transition-all transform hover:scale-105">
                     Learn More
                   </a>
                 </div>
               </div>
 
               {/* Illustration */}
-              <div className="hidden md:block h-80 animate-float-in" style={{ animationDelay: "0.2s" }}>
+              <div className="hidden md:block h-80 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
                 <div className="h-full w-full flex items-center justify-center">
                   <div className="w-64 h-64">
                     <AnimatedBrainIllustration />

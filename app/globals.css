@@ -3,42 +3,42 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Dark soft theme (default) */
+/* Soft Dark Medical Theme (default) */
 :root {
-  /* Dark Calm Trust palette: soft dark blues, mint greens, slate greys */
-  --background: oklch(0.15 0.015 240);
-  --foreground: oklch(0.92 0.01 220);
-  --card: oklch(0.18 0.015 230);
-  --card-foreground: oklch(0.92 0.01 220);
-  --popover: oklch(0.18 0.015 230);
-  --popover-foreground: oklch(0.92 0.01 220);
-  --primary: oklch(0.62 0.12 230);
-  --primary-foreground: oklch(0.12 0.01 230);
-  --secondary: oklch(0.26 0.015 230);
-  --secondary-foreground: oklch(0.92 0.01 220);
-  --muted: oklch(0.26 0.015 230);
-  --muted-foreground: oklch(0.68 0.02 220);
-  --accent: oklch(0.70 0.1 168);
-  --accent-foreground: oklch(0.12 0.01 170);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.92 0.01 220);
-  --border: oklch(0.28 0.015 230);
-  --input: oklch(0.22 0.015 230);
-  --ring: oklch(0.62 0.12 230);
-  --chart-1: oklch(0.62 0.12 230);
-  --chart-2: oklch(0.70 0.1 168);
-  --chart-3: oklch(0.52 0.04 240);
-  --chart-4: oklch(0.60 0.08 200);
-  --chart-5: oklch(0.75 0.08 168);
+  /* Premium Soft Dark palette */
+  --background: #0B1220;
+  --foreground: #E5E7EB;
+  --card: #111827;
+  --card-foreground: #E5E7EB;
+  --popover: #111827;
+  --popover-foreground: #E5E7EB;
+  --primary: #22D3EE;
+  --primary-foreground: #0B1220;
+  --secondary: #8B5CF6;
+  --secondary-foreground: #E5E7EB;
+  --muted: #1F2937;
+  --muted-foreground: #9CA3AF;
+  --accent: #22D3EE;
+  --accent-foreground: #0B1220;
+  --destructive: #EF4444;
+  --destructive-foreground: #E5E7EB;
+  --border: #1F2937;
+  --input: #111827;
+  --ring: #22D3EE;
+  --chart-1: #22D3EE;
+  --chart-2: #8B5CF6;
+  --chart-3: #06B6D4;
+  --chart-4: #6366F1;
+  --chart-5: #10B981;
   --radius: 0.75rem;
-  --sidebar: oklch(0.18 0.015 230);
-  --sidebar-foreground: oklch(0.92 0.01 220);
-  --sidebar-primary: oklch(0.62 0.12 230);
-  --sidebar-primary-foreground: oklch(0.12 0.01 230);
-  --sidebar-accent: oklch(0.26 0.015 230);
-  --sidebar-accent-foreground: oklch(0.92 0.01 220);
-  --sidebar-border: oklch(0.28 0.015 230);
-  --sidebar-ring: oklch(0.62 0.12 230);
+  --sidebar: #111827;
+  --sidebar-foreground: #E5E7EB;
+  --sidebar-primary: #22D3EE;
+  --sidebar-primary-foreground: #0B1220;
+  --sidebar-accent: #8B5CF6;
+  --sidebar-accent-foreground: #E5E7EB;
+  --sidebar-border: #1F2937;
+  --sidebar-ring: #22D3EE;
 }
 
 /* Light theme fallback */
@@ -125,62 +125,109 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#0B1220] text-[#E5E7EB];
   }
-  /* Smooth scroll for the whole page */
   html {
     scroll-behavior: smooth;
+    color-scheme: dark;
   }
   /* Better focus visibility for accessibility */
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #111827;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #1F2937;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #22D3EE;
+  }
 }
 
 @layer utilities {
-  /* Mic button animations */
-  @keyframes mic-pulse {
+  /* Premium Soft Dark Animations */
+  
+  @keyframes recording-pulse {
     0%, 100% {
-      transform: scale(1);
-      opacity: 1;
+      box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7), 0 8px 24px rgba(34, 211, 238, 0.2);
     }
     50% {
-      transform: scale(1.05);
-      opacity: 0.8;
+      box-shadow: 0 0 0 20px rgba(34, 211, 238, 0.4), 0 8px 24px rgba(34, 211, 238, 0.15);
     }
   }
 
-  @keyframes mic-bounce {
+  @keyframes ripple-ring {
+    0% {
+      transform: scale(0.95);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+
+  @keyframes glow-cyan {
     0%, 100% {
+      text-shadow: 0 0 20px rgba(34, 211, 238, 0.5), 0 0 40px rgba(34, 211, 238, 0.25);
+    }
+    50% {
+      text-shadow: 0 0 30px rgba(34, 211, 238, 0.8), 0 0 60px rgba(34, 211, 238, 0.4);
+    }
+  }
+
+  @keyframes glow-purple {
+    0%, 100% {
+      text-shadow: 0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.25);
+    }
+    50% {
+      text-shadow: 0 0 30px rgba(139, 92, 246, 0.8), 0 0 60px rgba(139, 92, 246, 0.4);
+    }
+  }
+
+  @keyframes waveform-bar {
+    0%, 100% {
+      height: 8px;
+    }
+    50% {
+      height: 40px;
+    }
+  }
+
+  @keyframes waveform-float {
+    0%, 100% {
+      opacity: 0.4;
       transform: translateY(0);
     }
     50% {
-      transform: translateY(-8px);
-    }
-  }
-
-  @keyframes mic-glow {
-    0%, 100% {
-      box-shadow: 0 0 20px rgba(98, 180, 200, 0.4), 0 0 40px rgba(98, 180, 200, 0.2);
-    }
-    50% {
-      box-shadow: 0 0 30px rgba(98, 180, 200, 0.6), 0 0 60px rgba(98, 180, 200, 0.3);
-    }
-  }
-
-  @keyframes wave-motion {
-    0%, 100% {
       opacity: 1;
-      height: 100%;
-    }
-    50% {
-      opacity: 0.6;
-      height: 60%;
+      transform: translateY(-3px);
     }
   }
 
-  @keyframes slide-up {
+  @keyframes float-smooth {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes fade-in-up {
     from {
       opacity: 0;
       transform: translateY(20px);
@@ -191,64 +238,82 @@
     }
   }
 
-  @keyframes float-in {
+  @keyframes hover-lift {
     0% {
-      opacity: 0;
-      transform: translateY(30px) scale(0.95);
+      transform: translateY(0px);
+      box-shadow: 0 4px 12px rgba(34, 211, 238, 0.1);
     }
     100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
+      transform: translateY(-6px);
+      box-shadow: 0 12px 24px rgba(34, 211, 238, 0.2);
     }
   }
 
-  @keyframes rotate-slow {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes shimmer {
+  @keyframes subtle-glow {
     0%, 100% {
-      opacity: 0.5;
+      background: linear-gradient(135deg, rgba(34, 211, 238, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+    }
+    50% {
+      background: linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    }
+  }
+
+  @keyframes breathing {
+    0%, 100% {
+      opacity: 0.6;
     }
     50% {
       opacity: 1;
     }
   }
 
-  .animate-mic-pulse {
-    animation: mic-pulse 2s ease-in-out infinite;
+  /* Animation classes */
+  .animate-recording-pulse {
+    animation: recording-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-  .animate-mic-bounce {
-    animation: mic-bounce 0.6s ease-in-out infinite;
+  .animate-ripple {
+    animation: ripple-ring 1.5s ease-out infinite;
   }
 
-  .animate-mic-glow {
-    animation: mic-glow 2s ease-in-out infinite;
+  .animate-glow-cyan {
+    animation: glow-cyan 3s ease-in-out infinite;
   }
 
-  .animate-wave {
-    animation: wave-motion 0.4s ease-in-out infinite;
+  .animate-glow-purple {
+    animation: glow-purple 3s ease-in-out infinite;
   }
 
-  .animate-slide-up {
-    animation: slide-up 0.5s ease-out;
+  .animate-waveform-bar {
+    animation: waveform-bar 0.5s ease-in-out infinite;
   }
 
-  .animate-float-in {
-    animation: float-in 0.6s ease-out;
+  .animate-waveform-float {
+    animation: waveform-float 0.8s ease-in-out infinite;
   }
 
-  .animate-rotate-slow {
-    animation: rotate-slow 20s linear infinite;
+  .animate-float-smooth {
+    animation: float-smooth 4s ease-in-out infinite;
   }
 
-  .animate-shimmer {
-    animation: shimmer 2s ease-in-out infinite;
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .animate-breathing {
+    animation: breathing 2.5s ease-in-out infinite;
+  }
+
+  /* Hover effects */
+  .hover-lift-animation {
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .hover-lift-animation:hover {
+    animation: hover-lift 0.3s forwards;
+  }
+
+  .subtle-glow-bg {
+    animation: subtle-glow 3s ease-in-out infinite;
   }
 }
