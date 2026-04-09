@@ -6,6 +6,7 @@ import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, Mic, Square, RotateCcw, Volume2 } from "lucide-react"
+import { AnimatedVoiceWaves } from "@/components/illustrations"
 
 interface WaveformData {
   frequency: number
@@ -187,15 +188,22 @@ export default function TestPage() {
       <Navbar />
       <div className="pt-20 pb-16">
         {/* Hero Section */}
-        <section className="border-b border-border/50 bg-gradient-to-br from-background to-secondary/20">
+        <section className="border-b border-border/50 bg-gradient-to-br from-background via-secondary/10 to-primary/5">
           <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
-            <div className="mx-auto max-w-3xl text-center">
-              <h1 className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl" style={{ fontFamily: "var(--font-heading)" }}>
-                Voice Recording Test
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                Record your voice for biomarker analysis. Find a quiet environment and speak naturally.
-              </p>
+            <div className="grid gap-8 items-center md:grid-cols-2">
+              <div className="animate-slide-up">
+                <h1 className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl" style={{ fontFamily: "var(--font-heading)" }}>
+                  Voice Recording Test
+                </h1>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Record your voice for biomarker analysis. Find a quiet environment and speak naturally. Our AI will analyze your voice for potential Parkinson's Disease indicators.
+                </p>
+              </div>
+              <div className="hidden md:flex justify-center animate-float-in" style={{ animationDelay: "0.2s" }}>
+                <div className="w-40 h-40">
+                  <AnimatedVoiceWaves />
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -221,31 +229,50 @@ export default function TestPage() {
 
           {/* Animated Mic Button */}
           <div className="mb-12 flex justify-center">
-            <div className="relative h-48 w-48">
-              {/* Outer glow */}
+            <div className="relative h-56 w-56 flex items-center justify-center">
+              {/* Outer glow rings - only during recording */}
               {isRecording && (
                 <>
-                  <div className="absolute inset-0 rounded-full bg-primary/20 animate-pulse" />
-                  <div className="absolute inset-4 rounded-full bg-primary/15 animate-pulse" style={{ animationDelay: "0.1s" }} />
+                  <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-mic-glow" />
+                  <div className="absolute inset-8 rounded-full border-2 border-accent/25 animate-mic-pulse" />
                 </>
               )}
 
-              {/* Main Button */}
+              {/* Main Button with enhanced styling */}
               <button
                 onClick={isRecording ? stopRecording : startRecording}
                 disabled={isAnalyzing}
-                className="absolute inset-0 flex items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground hover:from-primary/90 hover:to-accent/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                className={`relative flex h-48 w-48 items-center justify-center rounded-full text-primary-foreground transition-all shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isRecording
+                    ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 animate-mic-pulse"
+                    : "bg-gradient-to-br from-primary to-accent hover:from-primary/90 hover:to-accent/90 animate-mic-bounce"
+                }`}
               >
-                <div className={`flex flex-col items-center gap-2 ${isRecording ? "animate-pulse" : ""}`}>
+                {/* Animated background shimmer effect */}
+                {isRecording && (
+                  <div className="absolute inset-0 rounded-full overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+                  </div>
+                )}
+
+                <div className="relative z-10 flex flex-col items-center gap-3">
                   {isRecording ? (
                     <>
-                      <Square className="h-8 w-8 animate-bounce" style={{ animationDuration: "1s" }} />
-                      <span className="text-sm font-semibold">{formatTime(recordingTime)}</span>
+                      <div className="relative">
+                        <Square className="h-8 w-8 animate-bounce" style={{ animationDuration: "1.2s" }} />
+                        <div className="absolute inset-0 animate-pulse bg-white/20 rounded-sm" />
+                      </div>
+                      <span className="text-sm font-bold tracking-wider">{formatTime(recordingTime)}</span>
+                      <span className="text-xs opacity-80">Recording...</span>
                     </>
                   ) : (
                     <>
-                      <Mic className={`h-8 w-8 ${isRecording ? "animate-pulse" : "animate-bounce"}`} style={{ animationDuration: "2s" }} />
+                      <div className={`relative ${isRecording ? "" : "animate-bounce"}`} style={{ animationDuration: "2s" }}>
+                        <Mic className="h-10 w-10" />
+                        <div className="absolute inset-0 animate-pulse bg-white/20 rounded-full" />
+                      </div>
                       <span className="text-sm font-semibold">Start Test</span>
+                      <span className="text-xs opacity-80">Tap to begin</span>
                     </>
                   )}
                 </div>

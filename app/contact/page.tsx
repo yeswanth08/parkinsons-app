@@ -6,6 +6,7 @@ import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MapPin, Phone, Mail, Clock, AlertCircle, Locate, Search } from "lucide-react"
+import { AnimatedDoctorIllustration, AnimatedLocationPin } from "@/components/illustrations"
 
 interface Doctor {
   id: number
@@ -213,15 +214,22 @@ export default function ContactPage() {
       <Navbar />
       <div className="pt-20 pb-16">
         {/* Hero Section */}
-        <section className="border-b border-border/50 bg-gradient-to-br from-background to-secondary/20">
+        <section className="border-b border-border/50 bg-gradient-to-br from-background via-secondary/10 to-accent/5">
           <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
-            <div className="mx-auto max-w-3xl text-center">
-              <h1 className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl" style={{ fontFamily: "var(--font-heading)" }}>
-                Find Parkinson&apos;s Specialists
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                Locate qualified neurologists and movement disorder specialists near you
-              </p>
+            <div className="grid gap-8 items-center md:grid-cols-2">
+              <div className="animate-slide-up">
+                <h1 className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl" style={{ fontFamily: "var(--font-heading)" }}>
+                  Find Parkinson&apos;s Specialists
+                </h1>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Locate qualified neurologists and movement disorder specialists near you. Use geolocation to discover the best doctors in your area.
+                </p>
+              </div>
+              <div className="hidden md:flex justify-center animate-float-in" style={{ animationDelay: "0.2s" }}>
+                <div className="w-48 h-48">
+                  <AnimatedDoctorIllustration />
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -308,7 +316,7 @@ export default function ContactPage() {
             </p>
 
             {filteredDoctors.length === 0 ? (
-              <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+              <Card className="border-border/50 bg-card/50 backdrop-blur-sm animate-slide-up">
                 <CardContent className="py-12 text-center">
                   <MapPin className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
                   <p className="text-muted-foreground">No specialists found in your search radius. Try increasing the distance.</p>
@@ -316,47 +324,51 @@ export default function ContactPage() {
               </Card>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-                {filteredDoctors.map((doctor) => (
+                {filteredDoctors.map((doctor, idx) => (
                   <button
                     key={doctor.id}
                     onClick={() => setSelectedDoctor(doctor)}
-                    className="text-left"
+                    className="text-left animate-float-in"
+                    style={{ animationDelay: `${idx * 0.1}s` }}
                   >
                     <Card
-                      className={`border-border/50 backdrop-blur-sm transition-all cursor-pointer ${
+                      className={`border-border/50 backdrop-blur-sm transition-all cursor-pointer duration-300 transform hover:scale-105 ${
                         selectedDoctor?.id === doctor.id
-                          ? "bg-primary/10 border-primary"
-                          : "bg-card/50 hover:bg-card/80"
+                          ? "bg-primary/10 border-primary shadow-lg shadow-primary/20"
+                          : "bg-card/50 hover:bg-card/80 hover:shadow-lg"
                       }`}
                     >
                       <CardHeader>
                         <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="text-lg">{doctor.name}</CardTitle>
-                            <CardDescription>{doctor.specialty}</CardDescription>
+                          <div className="flex-1">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              <span className="inline-block h-2 w-2 rounded-full bg-primary animate-pulse" />
+                              {doctor.name}
+                            </CardTitle>
+                            <CardDescription className="mt-1">{doctor.specialty}</CardDescription>
                           </div>
-                          <div className="rounded-lg bg-primary/10 px-2 py-1 text-sm font-semibold text-primary">
+                          <div className="rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 px-3 py-2 text-sm font-bold text-primary animate-pulse">
                             {doctor.distance} mi
                           </div>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        <div className="flex items-start gap-2 text-sm">
-                          <Building className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
+                        <div className="flex items-start gap-2 text-sm opacity-80 hover:opacity-100 transition-opacity">
+                          <Building className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
                           <span className="text-muted-foreground">{doctor.hospital}</span>
                         </div>
-                        <div className="flex items-start gap-2 text-sm">
-                          <MapPin className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
+                        <div className="flex items-start gap-2 text-sm opacity-80 hover:opacity-100 transition-opacity">
+                          <MapPin className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
                           <span className="text-muted-foreground">{doctor.address}</span>
                         </div>
                         <div className="flex items-start gap-2 text-sm">
-                          <Phone className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
-                          <a href={`tel:${doctor.phone}`} className="text-primary hover:underline">
+                          <Phone className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
+                          <a href={`tel:${doctor.phone}`} className="text-primary hover:underline font-medium transition-colors">
                             {doctor.phone}
                           </a>
                         </div>
-                        <div className="flex items-start gap-2 text-sm">
-                          <Clock className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
+                        <div className="flex items-start gap-2 text-sm opacity-80 hover:opacity-100 transition-opacity">
+                          <Clock className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
                           <span className="text-muted-foreground">{doctor.hours}</span>
                         </div>
                       </CardContent>

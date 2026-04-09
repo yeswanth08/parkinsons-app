@@ -5,6 +5,11 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Brain, Mic, TrendingUp, Users, CheckCircle2 } from "lucide-react"
+import {
+  AnimatedBrainIllustration,
+  AnimatedVoiceWaves,
+  AnimatedReportIllustration,
+} from "@/components/illustrations"
 
 export default function Home() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
@@ -83,27 +88,39 @@ export default function Home() {
       <Navbar />
       <div className="pt-20 pb-16">
         {/* Hero Section */}
-        <section className="relative overflow-hidden border-b border-border/50 bg-gradient-to-br from-background to-secondary/20">
-          <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
-            <div className="mx-auto max-w-3xl text-center">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2">
-                <Brain className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-primary">Early Detection Matters</span>
+        <section className="relative overflow-hidden border-b border-border/50 bg-gradient-to-br from-background via-secondary/10 to-primary/5">
+          <div className="mx-auto max-w-7xl px-6 py-16 sm:py-28">
+            <div className="grid gap-12 items-center md:grid-cols-2">
+              {/* Content */}
+              <div className="animate-slide-up">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2">
+                  <Brain className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary">Early Detection Matters</span>
+                </div>
+                <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl" style={{ fontFamily: "var(--font-heading)" }}>
+                  Parkinson&apos;s Disease Screening
+                </h1>
+                <p className="mb-8 text-lg text-muted-foreground sm:text-xl leading-relaxed">
+                  AI-powered voice analysis to detect early biomarkers of Parkinson&apos;s Disease. Non-invasive, accessible, and clinically informed.
+                </p>
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <a href="/test" className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors hover:scale-105 transform">
+                    <Mic className="h-5 w-5" />
+                    Start Voice Test
+                  </a>
+                  <a href="#information" className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-8 py-3 text-base font-semibold text-foreground hover:bg-secondary transition-colors hover:scale-105 transform">
+                    Learn More
+                  </a>
+                </div>
               </div>
-              <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl" style={{ fontFamily: "var(--font-heading)" }}>
-                Parkinson&apos;s Disease Screening
-              </h1>
-              <p className="mb-8 text-lg text-muted-foreground sm:text-xl">
-                AI-powered voice analysis to detect early biomarkers of Parkinson&apos;s Disease. Non-invasive, accessible, and clinically informed.
-              </p>
-              <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-                <a href="/test" className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                  <Mic className="h-5 w-5" />
-                  Start Voice Test
-                </a>
-                <a href="#information" className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-8 py-3 text-base font-semibold text-foreground hover:bg-secondary transition-colors">
-                  Learn More
-                </a>
+
+              {/* Illustration */}
+              <div className="hidden md:block h-80 animate-float-in" style={{ animationDelay: "0.2s" }}>
+                <div className="h-full w-full flex items-center justify-center">
+                  <div className="w-64 h-64">
+                    <AnimatedBrainIllustration />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -143,10 +160,12 @@ export default function Home() {
             </div>
             <div className="grid gap-6 sm:grid-cols-2">
               {parkinsonsInfo.map((info, idx) => (
-                <Card key={idx} className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors">
+                <Card key={idx} className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 transform hover:scale-105 hover:shadow-lg animate-slide-up" style={{ animationDelay: `${idx * 0.1}s` }}>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Brain className="h-5 w-5 text-primary" />
+                      <div className="h-5 w-5 text-primary animate-pulse">
+                        <Brain className="h-5 w-5" />
+                      </div>
                       {info.title}
                     </CardTitle>
                   </CardHeader>
