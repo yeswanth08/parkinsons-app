@@ -40,7 +40,7 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#0B1220]">
+    <div className="min-h-screen bg-[#0B1220] page-transition">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-[#1F2937]/30 bg-gradient-to-br from-[#0B1220] via-[#111827]/30 to-[#0B1220]">
         <div className="mx-auto max-w-7xl px-6 py-20 sm:py-32">
