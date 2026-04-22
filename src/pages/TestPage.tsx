@@ -27,24 +27,20 @@ export default function TestPage() {
 
   // Timer effect
   useEffect(() => {
-    if (isRecording) {
-      timerIntervalRef.current = setInterval(() => {
-        dispatch(setRecordingTime((prev: number) => {
-          const newTime = prev + 1
-          if (newTime >= MAX_RECORDING_TIME) {
-            handleStopRecording()
-          }
-          return newTime
-        }))
-      }, 1000)
-    }
+    if (!isRecording) return
 
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current)
+    timerIntervalRef.current = setInterval(() => {
+      const newTime = recordingTime + 1
+
+      if (newTime > MAX_RECORDING_TIME) {
+        handleStopRecording()
       }
-    }
-  }, [isRecording, dispatch])
+
+      dispatch(setRecordingTime(newTime))
+    }, 1000)
+
+    return () => clearInterval(timerIntervalRef.current!)
+  }, [isRecording, recordingTime])
 
   // Canvas animation effect
   useEffect(() => {
