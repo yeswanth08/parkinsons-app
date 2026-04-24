@@ -1,12 +1,15 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 export interface AnalysisResults {
-  jitter: number
-  shimmer: number
-  hnr: number
+  isHavingParkinsons: boolean,
+  severity: number,
+  suggestion: string,
+  jitter: string
+  shimmer: string
+  hnr: string
   f0: number
-  dda: number
-  ppe: number
+  dda: string
+  ppe: string
   riskScore: number
   timestamp: string
 }
