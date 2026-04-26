@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MapPin, Phone, Mail } from 'lucide-react'
+import { MapPin, Phone } from 'lucide-react'
 
 interface Doctor {
   id: number
@@ -54,7 +54,7 @@ const mockDoctors: Doctor[] = [
 ]
 
 export default function ContactPage() {
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [_, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null)
   const [searchRadius, setSearchRadius] = useState(5)
   const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>(mockDoctors)

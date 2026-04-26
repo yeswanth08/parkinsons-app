@@ -6,7 +6,7 @@ const navLinks = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Test', href: '/test', icon: Mic },
   { label: 'Report', href: '/report', icon: FileText },
-  // { label: 'Contact', href: '/contact', icon: Mail },
+  { label: 'Contact', href: '/contact', icon: Mail },
 ]
 
 export default function Navbar() {
