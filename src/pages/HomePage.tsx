@@ -75,7 +75,7 @@ export default function HomePage() {
             {[
               { icon: Users, label: "Affects", value: "10M+", desc: "people worldwide" },
               { icon: TrendingUp, label: "Detection", value: "90%", desc: "of voice changes" },
-              { icon: CheckCircle2, label: "Accuracy", value: "87%", desc: "in screening" },
+              { icon: CheckCircle2, label: "Accuracy", value: "98%", desc: "in screening" },
               { icon: Brain, label: "Dopamine", value: "60-80%", desc: "loss at diagnosis" }
             ].map((stat, i) => (
               <div key={i} className="rounded-lg border border-[#1F2937]/50 bg-gradient-to-br from-[#111827]/50 to-[#0B1220]/50 p-6 text-center backdrop-blur-sm">

@@ -11,7 +11,7 @@ interface UserFormDialogProps {
 export default function UserFormDialog({ isOpen, onClose }: UserFormDialogProps) {
   const dispatch = useDispatch()
   const [age, setAge] = useState('')
-  const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('')
+  const [gender, setGender] = useState<'male' | 'female' | ''>('')
   const [error, setError] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -81,8 +81,8 @@ export default function UserFormDialog({ isOpen, onClose }: UserFormDialogProps)
                 setError('')
               }}
               placeholder="Enter your age"
-              min="18"
-              max="120"
+              min="39"
+              max="83"
               className="w-full rounded-lg border border-[#1F2937] bg-[#0B1220] px-4 py-2 text-[#E5E7EB] placeholder-[#6B7280] focus:border-[#22D3EE] focus:outline-none focus:ring-2 focus:ring-[#22D3EE]/20 transition-colors"
             />
           </div>
@@ -96,7 +96,7 @@ export default function UserFormDialog({ isOpen, onClose }: UserFormDialogProps)
               id="gender"
               value={gender}
               onChange={(e) => {
-                setGender(e.target.value as 'male' | 'female' | 'other' | '')
+                setGender(e.target.value as 'male' | 'female' |'')
                 setError('')
               }}
               className="w-full rounded-lg border border-[#1F2937] bg-[#0B1220] px-4 py-2 text-[#E5E7EB] focus:border-[#22D3EE] focus:outline-none focus:ring-2 focus:ring-[#22D3EE]/20 transition-colors"
@@ -104,7 +104,6 @@ export default function UserFormDialog({ isOpen, onClose }: UserFormDialogProps)
               <option value="">Select your gender</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
-              <option value="other">Other</option>
             </select>
           </div>
 
