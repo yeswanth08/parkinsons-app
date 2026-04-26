@@ -34,7 +34,16 @@ export default function UserFormDialog({ isOpen, onClose }: UserFormDialogProps)
       gender: gender as 'male' | 'female' | 'other'
     }))
 
+    // Only close after successful submission
+    setAge('')
+    setGender('')
     onClose()
+  }
+
+  const handleCloseButton = () => {
+    // Prevent closing without submission by clicking X button
+    // User must fill in form to proceed
+    return
   }
 
   if (!isOpen) return null
@@ -42,11 +51,13 @@ export default function UserFormDialog({ isOpen, onClose }: UserFormDialogProps)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="relative w-full max-w-md rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827] to-[#0B1220] p-6 shadow-2xl shadow-[#22D3EE]/10 animate-fade-in-up">
-        {/* Close button */}
+        {/* Close button - disabled to prevent accidental dismissal */}
         <button
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-[#9CA3AF] hover:bg-[#1F2937] hover:text-[#E5E7EB] transition-colors"
-          aria-label="Close"
+          onClick={handleCloseButton}
+          disabled={true}
+          className="absolute right-4 top-4 rounded-lg p-1 text-[#6B7280] cursor-not-allowed transition-colors opacity-50"
+          aria-label="Close button disabled - please complete the form"
+          title="Complete the form to continue"
         >
           <X className="h-5 w-5" />
         </button>
