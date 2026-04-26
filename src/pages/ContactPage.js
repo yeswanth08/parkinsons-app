@@ -9,7 +9,6 @@ export default function ContactPage() {
     const [searchRadius, setSearchRadius] = useState(5);
     const [nearbyDoctors, setNearbyDoctors] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [apiKeyError, setApiKeyError] = useState(false);
     const mapRef = useRef(null);
     const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
