@@ -22,7 +22,10 @@ export default function ContactPage() {
   const [searchRadius, setSearchRadius] = useState(5)
   const [nearbyDoctors, setNearbyDoctors] = useState<(Doctor & { distance: string })[]>([])
   const [loading, setLoading] = useState(false)
+  const [apiKeyError, setApiKeyError] = useState(false)
   const mapRef = useRef<any>(null)
+  
+  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 3959 // Earth's radius in miles
@@ -182,18 +185,27 @@ export default function ContactPage() {
 
             {/* Map Area - Google Maps Style */}
             <div className="mb-8 rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6 h-80">
-              <div className="w-full h-full bg-[#0B1220] rounded-lg border border-[#1F2937] flex items-center justify-center relative overflow-hidden">
+              {!googleMapsApiKey ? (
+                <div className="w-full h-full bg-[#0B1220] rounded-lg border border-[#1F2937] flex items-center justify-center relative overflow-hidden">
+                  <div className="text-center">
+                    <MapPin className="mx-auto h-8 w-8 text-yellow-500 mb-3" />
+                    <p className="text-[#E5E7EB] font-semibold mb-2">Google Maps API Key Required</p>
+                    <p className="text-sm text-[#9CA3AF]">Add VITE_GOOGLE_MAPS_API_KEY to your environment variables</p>
+                    <p className="text-xs text-[#6B7280] mt-3">Get your free API key at <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-[#22D3EE] hover:underline">Google Cloud Console</a></p>
+                  </div>
+                </div>
+              ) : (
                 <iframe
                   width="100%"
                   height="100%"
                   style={{ border: 0, borderRadius: '8px' }}
-                  src={`https://www.google.com/maps/embed/v1/search?key=AIzaSyDummyKeyForDevelopment&q=neurologist+near+${userLocation?.lat},${userLocation?.lng}`}
+                  src={`https://www.google.com/maps/embed/v1/search?key=${googleMapsApiKey}&q=neurologist+near+${userLocation?.lat},${userLocation?.lng}`}
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   title="Nearby Specialists Map"
                 />
-              </div>
+              )}
               <p className="text-xs text-[#6B7280] mt-2 text-center">
                 Real-time map showing neurologists and movement disorder specialists near your location
               </p>
