@@ -160,9 +160,6 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-          </div>
-        </div>
-      </section>
 
       <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
         {!hasCompletedAnalysis ? (
