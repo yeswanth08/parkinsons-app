@@ -1,11 +1,16 @@
+import { useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { RootState } from '../store/store'
 import { FileText, ArrowLeft } from 'lucide-react'
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 
 export default function ReportPage() {
   const { analysisResults } = useSelector((state: RootState) => state.results)
   const { age, gender } = useSelector((state: RootState) => state.user)
+  const reportRef = useRef<HTMLDivElement>(null)
 
   if (!analysisResults) {
     return (
@@ -27,39 +32,60 @@ export default function ReportPage() {
     )
   }
 
-  const downloadReport = () => {
-    const reportText = `NeuroVox - Parkinson's Disease Screening Report
-=====================================
-
-Report Date: ${new Date(analysisResults.timestamp).toLocaleString()}
-
-Patient Information:
-- Age: ${age}
-- Gender: ${gender}
-
-Voice Biomarker Analysis Results:
-- Jitter: ${analysisResults.jitter}%
-- Shimmer: ${analysisResults.shimmer} dB
-- HNR (Harmonics-to-Noise Ratio): ${analysisResults.hnr} dB
-- F0 (Fundamental Frequency): ${analysisResults.f0} Hz
-- DDA (Delta Amplitude): ${analysisResults.dda}%
-- PPE (Pitch Perturbation Entropy): ${analysisResults.ppe}
-
-Risk Score: ${analysisResults.riskScore}/100
-
-DISCLAIMER:
-This is a screening tool only and NOT a medical diagnosis. 
-Please consult with a qualified neurologist for professional evaluation.
-`
-
-    const element = document.createElement('a')
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(reportText))
-    element.setAttribute('download', `neurovox-report-${new Date().getTime()}.txt`)
-    element.style.display = 'none'
-    document.body.appendChild(element)
-    element.click()
-    document.body.removeChild(element)
+  const downloadReport = async () => {
+    if (!reportRef.current) return
+    
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        backgroundColor: '#0B1220',
+        scale: 2,
+      })
+      
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      })
+      
+      const imgWidth = 210
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      let heightLeft = imgHeight
+      let position = 0
+      
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const imgData = canvas.toDataURL('image/png')
+      
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+      
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+      
+      pdf.save(`neurovox-report-${new Date().getTime()}.pdf`)
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+    }
   }
+
+  const metricsData = [
+    { name: 'Jitter', value: parseFloat(analysisResults.jitter) || 0 },
+    { name: 'Shimmer', value: parseFloat(analysisResults.shimmer) || 0 },
+    { name: 'HNR', value: parseFloat(analysisResults.hnr) || 0 },
+    { name: 'DDA', value: parseFloat(analysisResults.dda) || 0 },
+  ]
+
+  const radarData = [
+    { metric: 'Jitter', value: Math.min(parseFloat(analysisResults.jitter) || 0, 100) },
+    { metric: 'Shimmer', value: Math.min(parseFloat(analysisResults.shimmer) || 0, 100) },
+    { metric: 'HNR', value: Math.min(parseFloat(analysisResults.hnr) || 0, 100) },
+    { metric: 'F0', value: Math.min(analysisResults.f0 / 2 || 0, 100) },
+    { metric: 'DDA', value: Math.min(parseFloat(analysisResults.dda) || 0, 100) },
+    { metric: 'PPE', value: Math.min(parseFloat(analysisResults.ppe) || 0, 100) },
+  ]
 
   return (
     <div className="min-h-screen bg-[#0B1220]">
@@ -72,8 +98,17 @@ Please consult with a qualified neurologist for professional evaluation.
         </div>
       </section>
 
-      <div className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
-        {/* Patient Info */}
+      <div ref={reportRef} className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
+        {/* Website Header and Disclaimer */}
+        <div className="mb-8 text-center pb-8 border-b border-[#1F2937]/40">
+          <h2 className="text-2xl font-bold text-[#22D3EE] mb-2">NeuroVox</h2>
+          <p className="text-sm text-[#9CA3AF] mb-4">Parkinson's Disease Voice Screening System</p>
+          <p className="text-xs text-[#6B7280] italic">
+            DISCLAIMER: This is a screening tool only and NOT a medical diagnosis. 
+            Please consult with a qualified neurologist for professional evaluation.
+          </p>
+          <p className="text-xs text-[#6B7280] mt-2">Report Generated: {new Date(analysisResults.timestamp).toLocaleString()}</p>
+        </div>
         <div className="mb-8 rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
           <h2 className="text-xl font-semibold text-[#E5E7EB] mb-4">Patient Information</h2>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -84,6 +119,55 @@ Please consult with a qualified neurologist for professional evaluation.
             <div>
               <p className="text-sm text-[#9CA3AF]">Gender</p>
               <p className="text-lg font-semibold text-[#E5E7EB] capitalize">{gender}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Section */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-[#E5E7EB] mb-6">Voice Metrics Visualization</h2>
+          
+          <div className="grid gap-6 mb-8">
+            {/* Bar Chart */}
+            <div className="rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
+              <h3 className="text-lg font-semibold text-[#E5E7EB] mb-4">Key Metrics Comparison</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={metricsData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
+                  <XAxis dataKey="name" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" />
+                  <Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #1F2937', borderRadius: '8px' }} />
+                  <Bar dataKey="value" fill="#22D3EE" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Radar Chart */}
+            <div className="rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
+              <h3 className="text-lg font-semibold text-[#E5E7EB] mb-4">Voice Profile Analysis</h3>
+              <ResponsiveContainer width="100%" height={350}>
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke="#1F2937" />
+                  <PolarAngleAxis dataKey="metric" stroke="#9CA3AF" />
+                  <PolarRadiusAxis stroke="#9CA3AF" />
+                  <Radar name="Voice Metrics" dataKey="value" stroke="#22D3EE" fill="#22D3EE" fillOpacity={0.6} />
+                  <Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #1F2937', borderRadius: '8px' }} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Metrics Trend */}
+            <div className="rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
+              <h3 className="text-lg font-semibold text-[#E5E7EB] mb-4">Risk Score Trend</h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={[{ name: 'Current', score: analysisResults.riskScore }]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
+                  <XAxis dataKey="name" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" domain={[0, 100]} />
+                  <Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #1F2937', borderRadius: '8px' }} />
+                  <Line type="monotone" dataKey="score" stroke="#8B5CF6" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
