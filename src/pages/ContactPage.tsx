@@ -24,7 +24,6 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false)
   const mapRef = useRef<any>(null)
 
-  // Haversine formula to calculate distance between two coordinates
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 3959 // Earth's radius in miles
     const dLat = (lat2 - lat1) * Math.PI / 180
@@ -36,12 +35,9 @@ export default function ContactPage() {
     return R * c
   }
 
-  // Fetch nearby doctors from Google Places (simulated with real coordinates)
   const fetchNearbyDoctors = async (lat: number, lng: number) => {
     setLoading(true)
     try {
-      // Simulate fetching nearby neurologists/movement disorder specialists
-      // In production, this would use Google Places API
       const mockNearbyDoctors: Doctor[] = [
         {
           id: 1,
@@ -78,7 +74,6 @@ export default function ContactPage() {
         },
       ]
 
-      // Calculate distances
       const doctorsWithDistance = mockNearbyDoctors
         .map(doctor => ({
           ...doctor,
@@ -95,7 +90,6 @@ export default function ContactPage() {
   }
 
   useEffect(() => {
-    // Get user's location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -109,7 +103,6 @@ export default function ContactPage() {
           }
         },
         () => {
-          // Default location if geolocation fails
           const defaultLoc = { lat: 40.7128, lng: -74.0060 }
           setUserLocation(defaultLoc)
           if (analysisResults) {
@@ -121,25 +114,21 @@ export default function ContactPage() {
   }, [analysisResults])
 
   useEffect(() => {
-    // Filter doctors based on search radius
     if (userLocation && analysisResults) {
       const filtered = nearbyDoctors.filter((doctor) => {
         const distNum = parseFloat(doctor.distance)
         return distNum <= searchRadius
       })
-      // Update map when filtered doctors change
       if (mapRef.current) {
         mapRef.current.updateMarkers(filtered, userLocation)
       }
     }
   }, [searchRadius, nearbyDoctors, analysisResults, userLocation])
 
-  // Check if user has completed voice analysis
   const hasCompletedAnalysis = !!analysisResults
 
   return (
     <div className="min-h-screen bg-[#0B1220]">
-      {/* Hero Section */}
       <section className="border-b border-[#1F2937]/30 bg-gradient-to-br from-[#0B1220] via-[#111827]/30 to-[#0B1220]">
         <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
           <div className="animate-fade-in-up">
