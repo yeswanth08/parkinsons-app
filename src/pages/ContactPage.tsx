@@ -22,7 +22,6 @@ export default function ContactPage() {
   const [searchRadius, setSearchRadius] = useState(5)
   const [nearbyDoctors, setNearbyDoctors] = useState<(Doctor & { distance: string })[]>([])
   const [loading, setLoading] = useState(false)
-  const [apiKeyError, setApiKeyError] = useState(false)
   const mapRef = useRef<any>(null)
   
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
