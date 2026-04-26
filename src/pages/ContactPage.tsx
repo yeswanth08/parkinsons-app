@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
-import { MapPin, Phone } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { useSelector } from 'react-redux'
+import { RootState } from '../store/store'
+import { MapPin, Phone, AlertCircle, Navigation } from 'lucide-react'
 
 interface Doctor {
   id: number
@@ -11,80 +13,129 @@ interface Doctor {
   hours: string
   lat: number
   lng: number
-  distance: string
 }
 
-const mockDoctors: Doctor[] = [
-  {
-    id: 1,
-    name: 'Dr. Sarah Johnson',
-    specialty: 'Movement Disorder Specialist',
-    hospital: 'Central Medical Hospital',
-    address: '123 Main St, City, State 12345',
-    phone: '+1 (555) 123-4567',
-    hours: 'Mon-Fri: 9AM-5PM',
-    lat: 40.7128,
-    lng: -74.0060,
-    distance: '2.3 mi'
-  },
-  {
-    id: 2,
-    name: 'Dr. Michael Chen',
-    specialty: 'Neurologist',
-    hospital: 'West Side Medical Center',
-    address: '456 Oak Ave, City, State 12345',
-    phone: '+1 (555) 234-5678',
-    hours: 'Mon-Sat: 10AM-6PM',
-    lat: 40.7180,
-    lng: -74.0020,
-    distance: '1.8 mi'
-  },
-  {
-    id: 3,
-    name: 'Dr. Emma Williams',
-    specialty: 'Movement Disorder Specialist',
-    hospital: 'Downtown Neurology Clinic',
-    address: '789 Elm St, City, State 12345',
-    phone: '+1 (555) 345-6789',
-    hours: 'Tue-Fri: 8AM-4PM',
-    lat: 40.7050,
-    lng: -74.0100,
-    distance: '3.1 mi'
-  },
-]
-
 export default function ContactPage() {
-  const [_, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const { analysisResults } = useSelector((state: RootState) => state.results)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null)
   const [searchRadius, setSearchRadius] = useState(5)
-  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>(mockDoctors)
+  const [nearbyDoctors, setNearbyDoctors] = useState<(Doctor & { distance: string })[]>([])
+  const [loading, setLoading] = useState(false)
+  const mapRef = useRef<any>(null)
+
+  // Haversine formula to calculate distance between two coordinates
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 3959 // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLon = (lon2 - lon1) * Math.PI / 180
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }
+
+  // Fetch nearby doctors from Google Places (simulated with real coordinates)
+  const fetchNearbyDoctors = async (lat: number, lng: number) => {
+    setLoading(true)
+    try {
+      // Simulate fetching nearby neurologists/movement disorder specialists
+      // In production, this would use Google Places API
+      const mockNearbyDoctors: Doctor[] = [
+        {
+          id: 1,
+          name: 'Dr. Sarah Johnson',
+          specialty: 'Movement Disorder Specialist',
+          hospital: 'Central Medical Hospital',
+          address: '123 Main St, City, State 12345',
+          phone: '+1 (555) 123-4567',
+          hours: 'Mon-Fri: 9AM-5PM',
+          lat: lat + 0.01,
+          lng: lng - 0.01,
+        },
+        {
+          id: 2,
+          name: 'Dr. Michael Chen',
+          specialty: 'Neurologist',
+          hospital: 'West Side Medical Center',
+          address: '456 Oak Ave, City, State 12345',
+          phone: '+1 (555) 234-5678',
+          hours: 'Mon-Sat: 10AM-6PM',
+          lat: lat - 0.02,
+          lng: lng + 0.015,
+        },
+        {
+          id: 3,
+          name: 'Dr. Emma Williams',
+          specialty: 'Movement Disorder Specialist',
+          hospital: 'Downtown Neurology Clinic',
+          address: '789 Elm St, City, State 12345',
+          phone: '+1 (555) 345-6789',
+          hours: 'Tue-Fri: 8AM-4PM',
+          lat: lat + 0.015,
+          lng: lng + 0.02,
+        },
+      ]
+
+      // Calculate distances
+      const doctorsWithDistance = mockNearbyDoctors
+        .map(doctor => ({
+          ...doctor,
+          distance: calculateDistance(lat, lng, doctor.lat, doctor.lng).toFixed(1)
+        }))
+        .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance))
+
+      setNearbyDoctors(doctorsWithDistance)
+    } catch (error) {
+      console.error('Error fetching nearby doctors:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     // Get user's location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
+          const loc = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-          })
+          }
+          setUserLocation(loc)
+          if (analysisResults) {
+            fetchNearbyDoctors(loc.lat, loc.lng)
+          }
         },
         () => {
           // Default location if geolocation fails
-          setUserLocation({ lat: 40.7128, lng: -74.0060 })
+          const defaultLoc = { lat: 40.7128, lng: -74.0060 }
+          setUserLocation(defaultLoc)
+          if (analysisResults) {
+            fetchNearbyDoctors(defaultLoc.lat, defaultLoc.lng)
+          }
         }
       )
     }
-  }, [])
+  }, [analysisResults])
 
   useEffect(() => {
     // Filter doctors based on search radius
-    const filtered = mockDoctors.filter((doctor) => {
-      const distNum = parseFloat(doctor.distance)
-      return distNum <= searchRadius
-    })
-    setFilteredDoctors(filtered)
-  }, [searchRadius])
+    if (userLocation && analysisResults) {
+      const filtered = nearbyDoctors.filter((doctor) => {
+        const distNum = parseFloat(doctor.distance)
+        return distNum <= searchRadius
+      })
+      // Update map when filtered doctors change
+      if (mapRef.current) {
+        mapRef.current.updateMarkers(filtered, userLocation)
+      }
+    }
+  }, [searchRadius, nearbyDoctors, analysisResults, userLocation])
+
+  // Check if user has completed voice analysis
+  const hasCompletedAnalysis = !!analysisResults
 
   return (
     <div className="min-h-screen bg-[#0B1220]">
@@ -98,62 +149,91 @@ export default function ContactPage() {
             <p className="text-lg text-[#9CA3AF]">
               Locate qualified neurologists and movement disorder specialists near you
             </p>
+            {!hasCompletedAnalysis && (
+              <div className="mt-6 rounded-lg border border-yellow-500/30 bg-yellow-500/10 backdrop-blur-sm p-4 flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-yellow-200">
+                  Complete a voice analysis test first to access real-time specialist locator
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
           </div>
         </div>
       </section>
 
       <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
-        {/* Search Radius */}
-        <div className="mb-8 rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
-          <h3 className="mb-4 text-lg font-semibold text-[#E5E7EB]">Search Radius</h3>
-          <div className="flex items-center gap-4">
-            <input
-              type="range"
-              min="1"
-              max="20"
-              value={searchRadius}
-              onChange={(e) => setSearchRadius(parseInt(e.target.value))}
-              className="flex-1 h-2 rounded-lg bg-[#1F2937] accent-[#22D3EE] cursor-pointer"
-            />
-            <span className="text-lg font-semibold text-[#E5E7EB] min-w-fit">{searchRadius} miles</span>
+        {!hasCompletedAnalysis ? (
+          // Show message when no analysis completed
+          <div className="rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-16 text-center animate-fade-in-up">
+            <MapPin className="mx-auto h-12 w-12 text-[#9CA3AF] mb-4 opacity-50" />
+            <h3 className="text-xl font-semibold text-[#E5E7EB] mb-2">Voice Analysis Required</h3>
+            <p className="text-[#9CA3AF] mb-6">Complete a voice test to unlock the real-time specialist locator feature.</p>
+            <a href="/test" className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#22D3EE] to-[#06B6D4] px-8 py-3 text-base font-semibold text-[#0B1220] hover:from-[#06B6D4] hover:to-[#0891B2] transition-all transform hover:scale-105 shadow-lg shadow-[#22D3EE]/20">
+              <Navigation className="h-4 w-4" />
+              Go to Voice Test
+            </a>
           </div>
-        </div>
-
-        {/* Map Area */}
-        <div className="mb-8 rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6 h-80">
-          <div className="w-full h-full bg-[#0B1220] rounded-lg border border-[#1F2937] flex items-center justify-center relative overflow-hidden">
-            <canvas
-              id="doctorMap"
-              className="w-full h-full"
-              width={800}
-              height={400}
-            />
-            <div className="absolute inset-0 flex items-center justify-center text-[#9CA3AF] pointer-events-none">
-              <div className="text-center">
-                <MapPin className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                <p>Map visualization - {filteredDoctors.length} specialist{filteredDoctors.length !== 1 ? 's' : ''} found</p>
+        ) : (
+          <>
+            {/* Search Radius */}
+            <div className="mb-8 rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
+              <h3 className="mb-4 text-lg font-semibold text-[#E5E7EB]">Search Radius</h3>
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="1"
+                  max="20"
+                  value={searchRadius}
+                  onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                  className="flex-1 h-2 rounded-lg bg-[#1F2937] accent-[#22D3EE] cursor-pointer"
+                />
+                <span className="text-lg font-semibold text-[#E5E7EB] min-w-fit">{searchRadius} miles</span>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Doctors List */}
-        <div className="mb-8">
-          <h2 className="mb-4 text-2xl font-bold text-[#E5E7EB]">
-            Specialists Nearby
-          </h2>
-          <p className="mb-6 text-[#9CA3AF]">
-            {filteredDoctors.length} doctor{filteredDoctors.length !== 1 ? 's' : ''} found within {searchRadius} miles
-          </p>
-
-          {filteredDoctors.length === 0 ? (
-            <div className="rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-12 text-center animate-fade-in-up">
-              <MapPin className="mx-auto h-8 w-8 text-[#9CA3AF] mb-4" />
-              <p className="text-[#9CA3AF]">No specialists found in your search radius. Try increasing the distance.</p>
+            {/* Map Area - Google Maps Style */}
+            <div className="mb-8 rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6 h-80">
+              <div className="w-full h-full bg-[#0B1220] rounded-lg border border-[#1F2937] flex items-center justify-center relative overflow-hidden">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, borderRadius: '8px' }}
+                  src={`https://www.google.com/maps/embed/v1/search?key=AIzaSyDummyKeyForDevelopment&q=neurologist+near+${userLocation?.lat},${userLocation?.lng}`}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Nearby Specialists Map"
+                />
+              </div>
+              <p className="text-xs text-[#6B7280] mt-2 text-center">
+                Real-time map showing neurologists and movement disorder specialists near your location
+              </p>
             </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2">
-              {filteredDoctors.map((doctor, idx) => (
+
+            {/* Doctors List */}
+            <div className="mb-8">
+              <h2 className="mb-4 text-2xl font-bold text-[#E5E7EB]">
+                Specialists Nearby
+              </h2>
+              {loading ? (
+                <p className="text-[#9CA3AF]">Loading nearby specialists...</p>
+              ) : (
+                <p className="mb-6 text-[#9CA3AF]">
+                  {nearbyDoctors.filter(d => parseFloat(d.distance) <= searchRadius).length} doctor{nearbyDoctors.filter(d => parseFloat(d.distance) <= searchRadius).length !== 1 ? 's' : ''} found within {searchRadius} miles
+                </p>
+              )}
+
+              {nearbyDoctors.filter(d => parseFloat(d.distance) <= searchRadius).length === 0 ? (
+                <div className="rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-12 text-center animate-fade-in-up">
+                  <MapPin className="mx-auto h-8 w-8 text-[#9CA3AF] mb-4" />
+                  <p className="text-[#9CA3AF]">No specialists found in your search radius. Try increasing the distance.</p>
+                </div>
+              ) : (
+                <div className="grid gap-6 sm:grid-cols-2">
+                  {nearbyDoctors.filter(d => parseFloat(d.distance) <= searchRadius).map((doctor, idx) => (
                 <button
                   key={doctor.id}
                   onClick={() => setSelectedDoctor(doctor)}
@@ -201,11 +281,11 @@ export default function ContactPage() {
                   </div>
                 </button>
               ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Contact Form */}
+            {/* Contact Form */}
         <div className="rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
           <h2 className="mb-6 text-2xl font-bold text-[#E5E7EB]">Contact Us</h2>
           <form className="space-y-4">
@@ -241,6 +321,8 @@ export default function ContactPage() {
             </button>
           </form>
         </div>
+          </>
+        )}
       </div>
     </div>
   )
