@@ -34,15 +34,12 @@ export default function UserFormDialog({ isOpen, onClose }: UserFormDialogProps)
       gender: gender as 'male' | 'female' | 'other'
     }))
 
-    // Only close after successful submission
     setAge('')
     setGender('')
     onClose()
   }
 
   const handleCloseButton = () => {
-    // Prevent closing without submission by clicking X button
-    // User must fill in form to proceed
     return
   }
 

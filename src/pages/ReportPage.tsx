@@ -99,7 +99,6 @@ export default function ReportPage() {
       </section>
 
       <div ref={reportRef} className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
-        {/* Website Header and Disclaimer */}
         <div className="mb-8 text-center pb-8 border-b border-[#1F2937]/40">
           <h2 className="text-2xl font-bold text-[#22D3EE] mb-2">NeuroVox</h2>
           <p className="text-sm text-[#9CA3AF] mb-4">Parkinson's Disease Voice Screening System</p>
@@ -123,12 +122,10 @@ export default function ReportPage() {
           </div>
         </div>
 
-        {/* Charts Section */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-[#E5E7EB] mb-6">Voice Metrics Visualization</h2>
           
           <div className="grid gap-6 mb-8">
-            {/* Bar Chart */}
             <div className="rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
               <h3 className="text-lg font-semibold text-[#E5E7EB] mb-4">Key Metrics Comparison</h3>
               <ResponsiveContainer width="100%" height={300}>
@@ -142,7 +139,6 @@ export default function ReportPage() {
               </ResponsiveContainer>
             </div>
 
-            {/* Radar Chart */}
             <div className="rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
               <h3 className="text-lg font-semibold text-[#E5E7EB] mb-4">Voice Profile Analysis</h3>
               <ResponsiveContainer width="100%" height={350}>
@@ -156,7 +152,6 @@ export default function ReportPage() {
               </ResponsiveContainer>
             </div>
 
-            {/* Metrics Trend */}
             <div className="rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
               <h3 className="text-lg font-semibold text-[#E5E7EB] mb-4">Risk Score Trend</h3>
               <ResponsiveContainer width="100%" height={250}>
@@ -172,7 +167,7 @@ export default function ReportPage() {
           </div>
         </div>
 
-        {/* Results */}
+
         <div className="mb-8 rounded-lg border border-[#1F2937]/40 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
           <h2 className="text-xl font-semibold text-[#E5E7EB] mb-6">Voice Biomarker Results</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
