@@ -12,10 +12,14 @@ import UserFormDialog from '../components/UserFormDialog'
 import {
   AlertCircle, Mic, Square, RotateCcw, Volume2,
   Upload, FileAudio, CheckCircle2, XCircle, ArrowLeft,
-  ChevronRight
+  ChevronRight, Download
 } from 'lucide-react'
 import { OpenAPI, DefaultService } from '@yeswanth08/parkinsons-internal'
 import type { ParkinsonsResponse } from '@yeswanth08/parkinsons-internal'
+
+// Vite asset imports — resolves src/samples/ to correct bundled URLs at build time
+const healthySampleUrl    = new URL('../samples/healthy_male_65.wav',    import.meta.url).href
+const parkinsonsSampleUrl = new URL('../samples/parkinsons_male_65.wav', import.meta.url).href
 
 OpenAPI.BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 
@@ -25,6 +29,52 @@ const WS_FRAME_BYTES     = 320
 const ACCEPTED_TYPES     = ['audio/wav', 'audio/mpeg', 'audio/ogg', 'audio/mp4', 'audio/x-wav']
 const ACCEPTED_EXT       = '.wav,.mp3,.ogg,.mp4'
 
+// Physically plausible bounds for a human voice recording.
+// NOT the UCI dataset min/max — those cover healthy+PD voices and are wrong for env checks.
+// These only reject recordings where the signal is clearly non-voice (silence, pure noise).
+//   F0 50-500Hz: human voice range, any age/sex including outliers
+//   Jitter > 0.5: 50% cycle variation = pure noise, not a voice signal at all
+//   Shimmer > 0.6: 60% amplitude variation = completely unstable, non-voice
+//   HNR must be positive: negative means noise power exceeds harmonic power entirely
+//   NHR > 0.5: UCI dataset max is 0.3148, so 0.5 is already very generous headroom
+// ENV thresholds cross-referenced against UCI dataset stats + clinical voice norms.
+// HNR:  UCI dataset min is 8.441 across all subjects (healthy+PD).
+//       We use 5.0 as floor — below that, noise dominates regardless of voice.
+// PPE:  UCI dataset max is 0.52784. >0.6 = pitch so erratic it's likely noise.
+// NHR:  UCI dataset max is 0.31482. 0.4 gives generous real-world headroom.
+const ENV_BOUNDS = {
+  fo:    { lo: 50, hi: 500 },
+  jitMax:  0.5,   // >50% jitter = noise, not voice
+  shimMax: 0.6,   // >60% shimmer amplitude variation = non-voice
+  hnrMin:  5.0,   // below UCI min (8.441) with ~3 dB headroom for real rooms
+  nhrMax:  0.4,   // above UCI max (0.315) with headroom
+  ppeMax:  0.6,   // above UCI max (0.528) with small headroom
+}
+
+function isEnvClean(features: Record<string, number | string>): boolean {
+  const fo   = Number(features['MDVP:Fo(Hz)'])
+  const jit  = Number(features['MDVP:Jitter(%)'])
+  const shim = Number(features['MDVP:Shimmer'])
+  const hnr  = Number(features['HNR'])
+  const nhr  = Number(features['NHR'])
+  const ppe  = Number(features['PPE'])
+
+  // F0 = 0 → silence or pure noise, hard reject immediately
+  if (fo === 0) return false
+
+  const violations = [
+    fo  < ENV_BOUNDS.fo.lo || fo > ENV_BOUNDS.fo.hi,
+    jit  > ENV_BOUNDS.jitMax,
+    shim > ENV_BOUNDS.shimMax,
+    hnr  < ENV_BOUNDS.hnrMin,  // 4.76 < 5.0 → violation
+    nhr  > ENV_BOUNDS.nhrMax,
+    ppe  > ENV_BOUNDS.ppeMax,  // 0.62 > 0.6 → violation
+  ].filter(Boolean).length
+
+  // 2+ violations → noisy environment (your noisy room: HNR 4.76 + PPE 0.62 = 2)
+  return violations < 2
+}
+
 function buildResultPayload(result: ParkinsonsResponse) {
   const f = result.extractedVoiceFeatures
   return {
@@ -33,11 +83,20 @@ function buildResultPayload(result: ParkinsonsResponse) {
     suggestion:         result.suggestion          ?? '',
     jitter:  f?.['MDVP:Jitter(%)']  ?? '—',
     shimmer: f?.['MDVP:Shimmer']     ?? '—',
-    hnr:     f?.['HNR']           ?? '—',
-    f0:      f?.['MDVP:Fo(Hz)']                  ?? 0,
+    hnr:     f?.['HNR']             ?? '—',
+    f0:      f?.['MDVP:Fo(Hz)']     ?? 0,
     dda:     f?.['Shimmer:DDA']      ?? '—',
     ppe:     f?.['PPE']              ?? '—',
-    riskScore: result.severity ? Math.round(result.severity * 10) : 0,
+    // Auto-detect severity scale:
+    // 0–1   → probability output from classifier  (multiply by 100)
+    // 1–10  → UPDRS-like 0–10 scale               (multiply by 10)
+    // 10–100→ already a percentage                 (use as-is)
+    riskScore: (() => {
+      const s = result.severity ?? 0
+      if (s <= 1)   return Math.round(s * 100)
+      if (s <= 10)  return Math.round(s * 10)
+      return Math.min(100, Math.round(s))
+    })(),
     timestamp: new Date().toISOString(),
   }
 }
@@ -50,19 +109,15 @@ function ModeSelector({ onSelect }: { onSelect: (m: 'record' | 'upload') => void
         onClick={() => onSelect('record')}
         className="group relative overflow-hidden rounded-2xl border border-[#1F2937]/60 bg-gradient-to-br from-[#111827]/90 to-[#0B1220]/90 p-8 text-left transition-all duration-300 hover:border-[#22D3EE]/40 hover:shadow-[0_0_40px_rgba(34,211,238,0.08)] focus:outline-none focus:ring-2 focus:ring-[#22D3EE]/40"
       >
-        {/* Glow accent */}
         <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[#22D3EE]/5 blur-2xl transition-all group-hover:bg-[#22D3EE]/10" />
-
         <div className="relative z-10">
           <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#22D3EE]/20 to-[#06B6D4]/10 border border-[#22D3EE]/20">
             <Mic className="h-7 w-7 text-[#22D3EE]" />
           </div>
-
           <h3 className="mb-2 text-lg font-semibold text-[#E5E7EB]">Record voice</h3>
           <p className="mb-6 text-sm text-[#6B7280] leading-relaxed">
             Record directly using your microphone. A pre-recording checklist ensures best accuracy.
           </p>
-
           <ul className="space-y-2 mb-6">
             {['Real-time streaming', 'Guided checklist', '5-second capture'].map(t => (
               <li key={t} className="flex items-center gap-2 text-xs text-[#9CA3AF]">
@@ -71,7 +126,6 @@ function ModeSelector({ onSelect }: { onSelect: (m: 'record' | 'upload') => void
               </li>
             ))}
           </ul>
-
           <div className="flex items-center gap-1 text-sm font-medium text-[#22D3EE]">
             Start recording
             <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -85,17 +139,14 @@ function ModeSelector({ onSelect }: { onSelect: (m: 'record' | 'upload') => void
         className="group relative overflow-hidden rounded-2xl border border-[#1F2937]/60 bg-gradient-to-br from-[#111827]/90 to-[#0B1220]/90 p-8 text-left transition-all duration-300 hover:border-[#8B5CF6]/40 hover:shadow-[0_0_40px_rgba(139,92,246,0.08)] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
       >
         <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[#8B5CF6]/5 blur-2xl transition-all group-hover:bg-[#8B5CF6]/10" />
-
         <div className="relative z-10">
           <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B5CF6]/20 to-[#7C3AED]/10 border border-[#8B5CF6]/20">
             <Upload className="h-7 w-7 text-[#8B5CF6]" />
           </div>
-
           <h3 className="mb-2 text-lg font-semibold text-[#E5E7EB]">Upload recording</h3>
           <p className="mb-6 text-sm text-[#6B7280] leading-relaxed">
             Already have a voice recording? Upload it directly for instant analysis.
           </p>
-
           <ul className="space-y-2 mb-6">
             {['WAV · MP3 · OGG', 'Any recording length', 'Drag & drop support'].map(t => (
               <li key={t} className="flex items-center gap-2 text-xs text-[#9CA3AF]">
@@ -104,7 +155,6 @@ function ModeSelector({ onSelect }: { onSelect: (m: 'record' | 'upload') => void
               </li>
             ))}
           </ul>
-
           <div className="flex items-center gap-1 text-sm font-medium text-[#8B5CF6]">
             Upload file
             <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -127,12 +177,12 @@ function UploadPanel({
   const { isFormSubmitted, age, gender } = useSelector((s: RootState) => s.user)
   const [showForm, setShowForm] = useState(!isFormSubmitted)
 
-  const [file, setFile]           = useState<File | null>(null)
-  const [dragging, setDragging]   = useState(false)
+  const [file, setFile]               = useState<File | null>(null)
+  const [dragging, setDragging]       = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isAnalyzingLocal, setIsAnalyzingLocal] = useState(false)
-  const [error, setError]         = useState<string | null>(null)
-  const [done, setDone]           = useState(false)
+  const [error, setError]             = useState<string | null>(null)
+  const [done, setDone]               = useState(false)
 
   const formatBytes = (b: number) =>
     b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / (1024 * 1024)).toFixed(2)} MB`
@@ -152,6 +202,12 @@ function UploadPanel({
     setDragging(false)
     const f = e.dataTransfer.files[0]
     if (f) handleFile(f)
+  }
+
+  // ── Feature 2: reset user state + re-open form when a sample is downloaded
+  const handleSampleDownload = () => {
+    dispatch(resetUserData())
+    setShowForm(true)
   }
 
   const handleAnalyze = async () => {
@@ -187,9 +243,9 @@ function UploadPanel({
     <>
       <UserFormDialog isOpen={showForm} onClose={() => setShowForm(false)} />
 
-      {/* Back button */}
+      {/* Back button — also resets user data so fresh demographics are entered */}
       <button
-        onClick={onBack}
+        onClick={() => { dispatch(resetUserData()); onBack() }}
         className="mb-8 flex items-center gap-2 text-sm text-[#6B7280] hover:text-[#E5E7EB] transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -204,6 +260,50 @@ function UploadPanel({
           <div>
             <h2 className="font-semibold text-[#E5E7EB]">Upload voice recording</h2>
             <p className="text-xs text-[#6B7280]">WAV · MP3 · OGG · any duration</p>
+          </div>
+        </div>
+
+        {/* ── Feature 2: Sample downloads ── */}
+        <div className="mb-6 rounded-xl border border-[#1F2937]/80 bg-[#0B1220]/60 p-4">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1F2937] flex-shrink-0 mt-0.5">
+              <Download className="h-4 w-4 text-[#6B7280]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[#E5E7EB]">No recording? Try a sample</p>
+              <p className="text-xs text-[#6B7280] mt-0.5 leading-relaxed">
+                Download a test voice file to explore the system. Samples extracted from the{' '}
+                <a
+                  href="https://github.com/SJTU-YONGFU-RESEARCH-GRP/Parkinson-Patient-Speech-Dataset"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#8B5CF6] hover:text-[#A78BFA] underline underline-offset-2 transition-colors"
+                >
+                  SJTU Parkinson Speech Dataset
+                </a>
+                .
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <a
+              href={healthySampleUrl}
+              download
+              onClick={handleSampleDownload}
+              className="flex items-center gap-1.5 rounded-lg border border-[#22D3EE]/25 bg-[#22D3EE]/5 px-3 py-2 text-xs font-medium text-[#22D3EE] hover:bg-[#22D3EE]/10 hover:border-[#22D3EE]/40 transition-all"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Healthy voice (Male, 65)
+            </a>
+            <a
+              href={parkinsonsSampleUrl}
+              download
+              onClick={handleSampleDownload}
+              className="flex items-center gap-1.5 rounded-lg border border-[#8B5CF6]/25 bg-[#8B5CF6]/5 px-3 py-2 text-xs font-medium text-[#8B5CF6] hover:bg-[#8B5CF6]/10 hover:border-[#8B5CF6]/40 transition-all"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Parkinson's voice (Male, 65)
+            </a>
           </div>
         </div>
 
@@ -260,8 +360,6 @@ function UploadPanel({
                 <XCircle className="h-5 w-5" />
               </button>
             </div>
-
-            {/* Replace button */}
             <label className="mt-4 flex cursor-pointer items-center gap-2 text-xs text-[#6B7280] hover:text-[#9CA3AF] transition-colors w-fit">
               <RotateCcw className="h-3 w-3" />
               Choose different file
@@ -342,7 +440,7 @@ function UploadPanel({
   )
 }
 
-// ─── Recording panel (existing logic, componentised) ─────────────────────────
+// ─── Recording panel ──────────────────────────────────────────────────────────
 function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAgain: () => void }) {
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -354,12 +452,9 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
   const { analysisResults } = useSelector(
     (state: RootState) => state.results)
 
-  const [showForm, setShowForm]     = useState(!isFormSubmitted)
-  const [checklist, setChecklist]   = useState({
-    quiet: false,
-    mic: false,
-    posture: false,
-    ready: false,
+  const [showForm, setShowForm]   = useState(!isFormSubmitted)
+  const [checklist, setChecklist] = useState({
+    quiet: false, mic: false, posture: false, ready: false,
   })
   const allChecked = Object.values(checklist).every(Boolean)
 
@@ -374,8 +469,15 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pcmBufRef        = useRef<Uint8Array>(new Uint8Array(0))
   const isActiveRef      = useRef(false)
+  // Ref mirror of recordingTime so timer setInterval never captures stale state
+  const recordingTimeRef = useRef(0)
+  const [badEnv, setBadEnv] = useState(false)
+  const [wsError, setWsError] = useState<string | null>(null)
 
-  // Visualiser
+  // Keep ref in sync with redux state
+  useEffect(() => { recordingTimeRef.current = recordingTime }, [recordingTime])
+
+  // Visualiser — runs once when isRecording flips true
   useEffect(() => {
     if (!isRecording) return
     let rafId: number
@@ -412,19 +514,21 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
     }
   }, [isRecording])
 
-  // Timer
+  // Timer — uses recordingTimeRef so the interval never has a stale closure
   useEffect(() => {
     if (!isRecording) return
     timerIntervalRef.current = setInterval(() => {
-      const next = recordingTime + 1
+      const next = recordingTimeRef.current + 1
       if (next >= MAX_RECORDING_TIME) {
         stopAudio()
       } else {
+        recordingTimeRef.current = next
         dispatch(setRecordingTime(next))
       }
     }, 1000)
-    return () => clearInterval(timerIntervalRef.current!)
-  }, [isRecording, recordingTime])
+    return () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRecording]) // intentionally omit recordingTime — ref handles it
 
   const toInt16Bytes = (f32: Float32Array): Uint8Array => {
     const out  = new Uint8Array(f32.length * 2)
@@ -477,6 +581,9 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
     if (!isFormSubmitted) { setShowForm(true); return }
     if (isActiveRef.current) return
 
+    setWsError(null)
+    setBadEnv(false)
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -507,8 +614,13 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
       source.connect(processor)
       processor.connect(audioCtx.destination)
 
-      pcmBufRef.current   = new Uint8Array(0)
-      isActiveRef.current = true
+      pcmBufRef.current        = new Uint8Array(0)
+      isActiveRef.current      = true
+      recordingTimeRef.current = 0
+
+      // ── Start the UI immediately — don't wait for WS handshake ──
+      dispatch(startRecording())
+      dispatch(setRecordingTime(0))
 
       const sex    = gender?.toLowerCase() === 'male' ? 0 : 1
       const wsBase = (OpenAPI.BASE as string).replace(/^http/, 'ws')
@@ -528,19 +640,38 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
         if (ws.readyState === WebSocket.OPEN) shipChunks(ws)
       }
 
-      ws.onopen = () => {
-        shipChunks(ws)
-        dispatch(startRecording())
-        dispatch(setRecordingTime(0))
+      ws.onopen = () => { shipChunks(ws) }
+
+      ws.onerror = () => {
+        isActiveRef.current = false
+        // Clean up audio hardware
+        processorRef.current?.disconnect()
+        sourceRef.current?.disconnect()
+        audioCtxRef.current?.close()
+        streamRef.current?.getTracks().forEach(t => t.stop())
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current)
+        if (animationIdRef.current)   cancelAnimationFrame(animationIdRef.current)
+        dispatch(stopRecording())
+        dispatch(setIsAnalyzing(false))
+        dispatch(setIsLoading(false))
+        setWsError('Could not connect to the analysis server. Make sure the backend is running and try again.')
       }
 
-      ws.onerror = () => { isActiveRef.current = false }
       ws.onclose = () => {}
 
       ws.onmessage = (evt) => {
         try {
-          const result = JSON.parse(evt.data as string) as ParkinsonsResponse
-          dispatch(setAnalysisResults(buildResultPayload(result)))
+          const result   = JSON.parse(evt.data as string) as ParkinsonsResponse
+          const features = result.extractedVoiceFeatures ?? {}
+
+          if (!isEnvClean(features as Record<string, number | string>)) {
+            setBadEnv(true)
+            dispatch(resetRecording())
+            dispatch(resetResults())
+          } else {
+            setBadEnv(false)
+            dispatch(setAnalysisResults(buildResultPayload(result)))
+          }
         } catch { /* parse error */ } finally {
           dispatch(setIsAnalyzing(false))
           dispatch(setIsLoading(false))
@@ -549,12 +680,13 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
 
     } catch {
       isActiveRef.current = false
-      alert('Could not access microphone. Check permissions.')
+      setWsError('Could not access microphone. Please check your browser permissions and try again.')
     }
   }
 
   const handleReset = () => {
-    // Clean up all audio resources
+    setBadEnv(false)
+    setWsError(null)
     isActiveRef.current = false
     wsRef.current?.close()
     processorRef.current?.disconnect()
@@ -562,7 +694,6 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
     audioCtxRef.current?.close()
     streamRef.current?.getTracks().forEach(t => t.stop())
     pcmBufRef.current = new Uint8Array(0)
-    // Delegate full state reset + form re-show to parent
     onTestAgain()
   }
 
@@ -586,8 +717,8 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
         </button>
       )}
 
-      {/* Pre-recording checklist — only shown before first recording */}
-      {!isRecording && !isAnalyzing && !analysisResults && (
+      {/* Pre-recording checklist */}
+      {!isRecording && !isAnalyzing && !analysisResults && !badEnv && !wsError && (
         <div className="mb-8 rounded-2xl border border-[#1F2937]/60 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#22D3EE]/10 border border-[#22D3EE]/20">
@@ -600,81 +731,33 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
           </div>
 
           <ul className="space-y-3 mb-5">
-            <li>
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={checklist.quiet}
-                  onChange={e => setChecklist(c => ({ ...c, quiet: e.target.checked }))}
-                  className="sr-only"
-                />
-                <div className={`h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
-                  checklist.quiet ? 'bg-[#22D3EE] border-[#22D3EE]' : 'border-[#374151] group-hover:border-[#22D3EE]/40'
-                }`}>
-                  {checklist.quiet && <CheckCircle2 className="h-3 w-3 text-[#0B1220]" />}
-                </div>
-                <span className={`text-sm transition-colors ${checklist.quiet ? 'text-[#E5E7EB]' : 'text-[#6B7280]'}`}>
-                  I'm in a quiet environment
-                </span>
-              </label>
-            </li>
-            <li>
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={checklist.mic}
-                  onChange={e => setChecklist(c => ({ ...c, mic: e.target.checked }))}
-                  className="sr-only"
-                />
-                <div className={`h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
-                  checklist.mic ? 'bg-[#22D3EE] border-[#22D3EE]' : 'border-[#374151] group-hover:border-[#22D3EE]/40'
-                }`}>
-                  {checklist.mic && <CheckCircle2 className="h-3 w-3 text-[#0B1220]" />}
-                </div>
-                <span className={`text-sm transition-colors ${checklist.mic ? 'text-[#E5E7EB]' : 'text-[#6B7280]'}`}>
-                  Microphone is close and working
-                </span>
-              </label>
-            </li>
-            <li>
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={checklist.posture}
-                  onChange={e => setChecklist(c => ({ ...c, posture: e.target.checked }))}
-                  className="sr-only"
-                />
-                <div className={`h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
-                  checklist.posture ? 'bg-[#22D3EE] border-[#22D3EE]' : 'border-[#374151] group-hover:border-[#22D3EE]/40'
-                }`}>
-                  {checklist.posture && <CheckCircle2 className="h-3 w-3 text-[#0B1220]" />}
-                </div>
-                <span className={`text-sm transition-colors ${checklist.posture ? 'text-[#E5E7EB]' : 'text-[#6B7280]'}`}>
-                  I'll speak naturally at normal volume
-                </span>
-              </label>
-            </li>
-            <li>
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={checklist.ready}
-                  onChange={e => setChecklist(c => ({ ...c, ready: e.target.checked }))}
-                  className="sr-only"
-                />
-                <div className={`h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
-                  checklist.ready ? 'bg-[#22D3EE] border-[#22D3EE]' : 'border-[#374151] group-hover:border-[#22D3EE]/40'
-                }`}>
-                  {checklist.ready && <CheckCircle2 className="h-3 w-3 text-[#0B1220]" />}
-                </div>
-                <span className={`text-sm transition-colors ${checklist.ready ? 'text-[#E5E7EB]' : 'text-[#6B7280]'}`}>
-                  I'm ready to hold a sustained vowel sound
-                </span>
-              </label>
-            </li>
+            {([
+              ['quiet',   "I'm in a quiet environment"],
+              ['mic',     'Microphone is close and working'],
+              ['posture', "I'll speak naturally at normal volume"],
+              ['ready',   "I'm ready to hold a sustained vowel sound"],
+            ] as const).map(([key, label]) => (
+              <li key={key}>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={checklist[key]}
+                    onChange={e => setChecklist(c => ({ ...c, [key]: e.target.checked }))}
+                    className="sr-only"
+                  />
+                  <div className={`h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
+                    checklist[key] ? 'bg-[#22D3EE] border-[#22D3EE]' : 'border-[#374151] group-hover:border-[#22D3EE]/40'
+                  }`}>
+                    {checklist[key] && <CheckCircle2 className="h-3 w-3 text-[#0B1220]" />}
+                  </div>
+                  <span className={`text-sm transition-colors ${checklist[key] ? 'text-[#E5E7EB]' : 'text-[#6B7280]'}`}>
+                    {label}
+                  </span>
+                </label>
+              </li>
+            ))}
           </ul>
 
-          {/* Progress bar */}
           <div className="h-1 w-full rounded-full bg-[#1F2937] overflow-hidden">
             <div
               className="h-full rounded-full bg-gradient-to-r from-[#22D3EE] to-[#06B6D4] transition-all duration-300"
@@ -697,7 +780,6 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
             </>
           )}
 
-          {/* Progress ring when recording */}
           {isRecording && (
             <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 224 224">
               <circle
@@ -783,6 +865,57 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
         </div>
       )}
 
+      {/* WS / mic error */}
+      {wsError && !isRecording && !isAnalyzing && (
+        <div className="mb-8 rounded-2xl border border-red-500/30 bg-red-500/5 p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/15 border border-red-500/20 flex-shrink-0 mt-0.5">
+              <AlertCircle className="h-5 w-5 text-red-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-300 mb-1">Connection error</h3>
+              <p className="text-sm text-red-400/80 leading-relaxed mb-4">{wsError}</p>
+              <button
+                onClick={() => { setWsError(null); handleReset() }}
+                className="rounded-xl border border-red-500/30 px-5 py-2.5 text-sm font-semibold text-red-300 hover:bg-red-500/10 transition-all"
+              >
+                <RotateCcw className="inline mr-2 h-4 w-4" />Try again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bad environment warning */}
+      {badEnv && !isRecording && !isAnalyzing && (
+        <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/20 flex-shrink-0 mt-0.5">
+              <AlertCircle className="h-5 w-5 text-amber-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-300 mb-1">Noisy environment detected</h3>
+              <p className="text-sm text-amber-400/80 leading-relaxed mb-4">
+                Your recording contained significant background noise. The extracted voice features
+                fall outside the expected range of the dataset, which could produce unreliable results.
+                Please move to a quieter space and try again.
+              </p>
+              <ul className="space-y-1 mb-5 text-xs text-amber-400/70">
+                <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-amber-400" />Turn off fans, AC, or music nearby</li>
+                <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-amber-400" />Move away from open windows or crowds</li>
+                <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-amber-400" />Hold the microphone 5–10 cm from your mouth</li>
+              </ul>
+              <button
+                onClick={handleReset}
+                className="rounded-xl border border-amber-500/30 px-5 py-2.5 text-sm font-semibold text-amber-300 hover:bg-amber-500/10 transition-all"
+              >
+                <RotateCcw className="inline mr-2 h-4 w-4" />Try again in a quieter space
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Result ready */}
       {analysisResults && !isRecording && !isAnalyzing && (
         <div className="mb-8 rounded-2xl border border-[#22D3EE]/20 bg-gradient-to-br from-[#111827]/80 to-[#0B1220]/80 backdrop-blur-sm p-6">
@@ -820,7 +953,6 @@ export default function TestPage() {
   const [showForm, setShowForm] = useState(!isFormSubmitted)
   const [mode, setMode] = useState<'record' | 'upload' | null>(null)
 
-  // Wipe everything — results, recording state, user form — then show mode selector + form
   const handleTestAgain = () => {
     dispatch(resetResults())
     dispatch(resetRecording())
@@ -833,7 +965,6 @@ export default function TestPage() {
     <div className="min-h-screen bg-[#0B1220]">
       <UserFormDialog isOpen={showForm} onClose={() => setShowForm(false)} />
 
-      {/* Hero */}
       <section className="border-b border-[#1F2937]/30 bg-gradient-to-br from-[#0B1220] via-[#111827]/30 to-[#0B1220]">
         <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
           <h1 className="mb-3 text-3xl font-bold tracking-tight text-[#E5E7EB] sm:text-4xl">
@@ -841,7 +972,7 @@ export default function TestPage() {
           </h1>
           <p className="text-lg text-[#9CA3AF] leading-relaxed max-w-2xl">
             {mode === null
-              ? 'Choose how you want to provide your voice sample for Parkinson\'s biomarker analysis.'
+              ? "Choose how you want to provide your voice sample for Parkinson's biomarker analysis."
               : mode === 'record'
                 ? 'Record your voice in real time. Find a quiet environment and speak naturally.'
                 : 'Upload a pre-recorded voice file for analysis. WAV, MP3, or OGG files accepted.'
@@ -851,9 +982,7 @@ export default function TestPage() {
       </section>
 
       <div className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
-        {mode === null && (
-          <ModeSelector onSelect={setMode} />
-        )}
+        {mode === null && <ModeSelector onSelect={setMode} />}
         {mode === 'record' && (
           <RecordingPanel onBack={() => setMode(null)} onTestAgain={handleTestAgain} />
         )}
