@@ -21,6 +21,10 @@ const userSlice = createSlice({
       state.gender = action.payload.gender
       state.isFormSubmitted = true
     },
+    setUserDataTemp: (state, action: PayloadAction<{ age: number; gender: 'male' | 'female' | 'other' }>) => {
+      state.age = action.payload.age
+      state.gender = action.payload.gender
+    },
     resetUserData: (state) => {
       state.age = null
       state.gender = null
@@ -29,5 +33,5 @@ const userSlice = createSlice({
   },
 })
 
-export const { setUserData, resetUserData } = userSlice.actions
+export const { setUserData, setUserDataTemp, resetUserData } = userSlice.actions
 export default userSlice.reducer
