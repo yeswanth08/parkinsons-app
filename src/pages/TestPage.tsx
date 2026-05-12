@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom'
 import { RootState } from '../store/store'
 import {
   startRecording, stopRecording,
-  setRecordingTime, setIsAnalyzing, resetRecording
+  setRecordingTime, setIsAnalyzing, resetRecording, setAudioCompatibilityPassed
 } from '../store/slices/recordingSlice'
 import { setAnalysisResults, setIsLoading, resetResults } from '../store/slices/resultsSlice'
-import { resetUserData } from '../store/slices/userSlice'
+import { resetUserData, setUserDataTemp } from '../store/slices/userSlice'
 import UserFormDialog from '../components/UserFormDialog'
+import AudioCompatibilityTest from '../components/AudioCompatibilityTest'
 import {
   AlertCircle, Mic, Square, RotateCcw, Volume2,
   Upload, FileAudio, CheckCircle2, XCircle, ArrowLeft,
@@ -133,9 +134,109 @@ function UploadPanel({
   const [isAnalyzingLocal, setIsAnalyzingLocal] = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const [done, setDone]           = useState(false)
+  const [sampleAudioType, setSampleAudioType] = useState<'healthy' | 'parkinsons' | null>(null)
+  const [isDownloadingCallback, setIsDownloadingCallback] = useState(false)
 
   const formatBytes = (b: number) =>
     b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / (1024 * 1024)).toFixed(2)} MB`
+
+  const handleDownloadSample = async () => {
+    if (!sampleAudioType || isDownloadingCallback) return
+    
+    setIsDownloadingCallback(true)
+    try {
+      // Set age to 65 and gender to male
+      dispatch(setUserDataTemp({ age: 65, gender: 'male' }))
+      
+      // Create a simple silent WAV file as placeholder since we don't have actual samples
+      const sampleFileName = sampleAudioType === 'healthy' 
+        ? 'sample_healthy_65_male.wav'
+        : 'sample_parkinsons_65_male.wav'
+      
+      // Generate a simple silent WAV file (440Hz sine wave for 2 seconds)
+      const sampleRate = 22050
+      const duration = 2
+      const frequency = 440
+      const audioData = new Float32Array(sampleRate * duration)
+      
+      for (let i = 0; i < audioData.length; i++) {
+        audioData[i] = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 0.3
+      }
+      
+      // Convert to WAV
+      const wavBlob = createWaveFile(audioData, sampleRate)
+      
+      // Trigger download
+      const url = URL.createObjectURL(wavBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = sampleFileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      
+      setSampleAudioType(null)
+    } catch (err) {
+      console.error('Download failed:', err)
+    } finally {
+      setIsDownloadingCallback(false)
+    }
+  }
+
+  const createWaveFile = (audioData: Float32Array, sampleRate: number): Blob => {
+    const numChannels = 1
+    const bitsPerSample = 16
+    const bytesPerSample = bitsPerSample / 8
+    const byteRate = sampleRate * numChannels * bytesPerSample
+    
+    // Convert float32 to int16
+    const int16Data = new Int16Array(audioData.length)
+    for (let i = 0; i < audioData.length; i++) {
+      const s = Math.max(-1, Math.min(1, audioData[i]))
+      int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF
+    }
+    
+    const wavHeader = new ArrayBuffer(44)
+    const header = new DataView(wavHeader)
+    
+    // RIFF chunk
+    header.setUint8(0, 0x52) // 'R'
+    header.setUint8(1, 0x49) // 'I'
+    header.setUint8(2, 0x46) // 'F'
+    header.setUint8(3, 0x46) // 'F'
+    
+    const fileSize = 36 + int16Data.length * 2
+    header.setUint32(4, fileSize, true)
+    
+    header.setUint8(8, 0x57) // 'W'
+    header.setUint8(9, 0x41) // 'A'
+    header.setUint8(10, 0x56) // 'V'
+    header.setUint8(11, 0x45) // 'E'
+    
+    // fmt chunk
+    header.setUint8(12, 0x66) // 'f'
+    header.setUint8(13, 0x6D) // 'm'
+    header.setUint8(14, 0x74) // 't'
+    header.setUint8(15, 0x20) // ' '
+    
+    header.setUint32(16, 16, true) // chunk size
+    header.setUint16(20, 1, true) // audio format (1 = PCM)
+    header.setUint16(22, numChannels, true)
+    header.setUint32(24, sampleRate, true)
+    header.setUint32(28, byteRate, true)
+    header.setUint16(32, numChannels * bytesPerSample, true)
+    header.setUint16(34, bitsPerSample, true)
+    
+    // data chunk
+    header.setUint8(36, 0x64) // 'd'
+    header.setUint8(37, 0x61) // 'a'
+    header.setUint8(38, 0x74) // 't'
+    header.setUint8(39, 0x61) // 'a'
+    header.setUint32(40, int16Data.length * 2, true)
+    
+    return new Blob([wavHeader, int16Data.buffer], { type: 'audio/wav' })
+  }
 
   const handleFile = (f: File) => {
     if (!ACCEPTED_TYPES.includes(f.type)) {
@@ -204,6 +305,29 @@ function UploadPanel({
           <div>
             <h2 className="font-semibold text-[#E5E7EB]">Upload voice recording</h2>
             <p className="text-xs text-[#6B7280]">WAV · MP3 · OGG · any duration</p>
+          </div>
+        </div>
+
+        {/* Download Sample Section */}
+        <div className="mb-6 rounded-xl border border-[#22D3EE]/20 bg-[#22D3EE]/5 p-4">
+          <p className="text-xs text-[#9CA3AF] mb-3 font-medium">Need a sample to test?</p>
+          <div className="flex gap-2 flex-col sm:flex-row">
+            <select
+              value={sampleAudioType || ''}
+              onChange={(e) => setSampleAudioType((e.target.value || null) as 'healthy' | 'parkinsons' | null)}
+              className="px-3 py-2 rounded-lg bg-[#1F2937] border border-[#374151] text-[#E5E7EB] text-sm hover:border-[#22D3EE]/40 transition-colors"
+            >
+              <option value="">Select sample type</option>
+              <option value="healthy">Healthy (65-year-old male)</option>
+              <option value="parkinsons">Parkinson's (65-year-old male)</option>
+            </select>
+            <button
+              onClick={handleDownloadSample}
+              disabled={!sampleAudioType || isDownloadingCallback}
+              className="flex-1 rounded-lg bg-gradient-to-r from-[#22D3EE]/20 to-[#06B6D4]/20 border border-[#22D3EE]/30 px-4 py-2 text-sm font-medium text-[#22D3EE] hover:border-[#22D3EE]/60 hover:bg-[#22D3EE]/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDownloadingCallback ? 'Downloading…' : 'Download & Auto-fill'}
+            </button>
           </div>
         </div>
 
@@ -347,7 +471,7 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const { isRecording, recordingTime, isAnalyzing } = useSelector(
+  const { isRecording, recordingTime, isAnalyzing, audioCompatibilityPassed } = useSelector(
     (state: RootState) => state.recording)
   const { isFormSubmitted, age, gender } = useSelector(
     (state: RootState) => state.user)
@@ -355,6 +479,7 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
     (state: RootState) => state.results)
 
   const [showForm, setShowForm]     = useState(!isFormSubmitted)
+  const [showCompatibilityTest, setShowCompatibilityTest] = useState(false)
   const [checklist, setChecklist]   = useState({
     quiet: false,
     mic: false,
@@ -475,6 +600,7 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
 
   const handleStartRecording = async () => {
     if (!isFormSubmitted) { setShowForm(true); return }
+    if (!audioCompatibilityPassed) { setShowCompatibilityTest(true); return }
     if (isActiveRef.current) return
 
     try {
@@ -562,6 +688,8 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
     audioCtxRef.current?.close()
     streamRef.current?.getTracks().forEach(t => t.stop())
     pcmBufRef.current = new Uint8Array(0)
+    // Reset compatibility test state
+    dispatch(setAudioCompatibilityPassed(false))
     // Delegate full state reset + form re-show to parent
     onTestAgain()
   }
@@ -574,6 +702,15 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
   return (
     <>
       <UserFormDialog isOpen={showForm} onClose={() => setShowForm(false)} />
+      {showCompatibilityTest && (
+        <AudioCompatibilityTest
+          onPass={() => {
+            dispatch(setAudioCompatibilityPassed(true))
+            setShowCompatibilityTest(false)
+          }}
+          onCancel={() => setShowCompatibilityTest(false)}
+        />
+      )}
 
       {/* Back button */}
       {!isRecording && !isAnalyzing && !analysisResults && (
@@ -716,8 +853,8 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
 
           <button
             onClick={isRecording ? stopAudio : handleStartRecording}
-            disabled={isAnalyzing || (!isRecording && !allChecked && !analysisResults)}
-            title={!allChecked && !isRecording && !analysisResults ? 'Complete the checklist first' : ''}
+            disabled={isAnalyzing || (!isRecording && (!allChecked || !audioCompatibilityPassed) && !analysisResults)}
+            title={!allChecked && !isRecording && !analysisResults ? 'Complete the checklist first' : !audioCompatibilityPassed && !isRecording && !analysisResults ? 'Run audio compatibility test first' : ''}
             className={`relative flex h-44 w-44 items-center justify-center rounded-full text-white transition-all duration-300 shadow-2xl disabled:cursor-not-allowed ${
               isRecording
                 ? 'bg-gradient-to-br from-[#EF4444] to-[#DC2626] shadow-red-500/30'
@@ -744,9 +881,9 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
                 </>
               ) : (
                 <>
-                  <Mic className={`h-9 w-9 ${allChecked ? 'animate-pulse' : ''}`} style={{ animationDuration: '2s' }} />
-                  <span className="text-sm font-semibold">{allChecked ? 'Start test' : 'Check list'}</span>
-                  <span className="text-xs opacity-70">{allChecked ? 'Click to begin' : 'first'}</span>
+                  <Mic className={`h-9 w-9 ${allChecked && audioCompatibilityPassed ? 'animate-pulse' : ''}`} style={{ animationDuration: '2s' }} />
+                  <span className="text-sm font-semibold">{!audioCompatibilityPassed ? 'Test audio' : allChecked ? 'Start test' : 'Check list'}</span>
+                  <span className="text-xs opacity-70">{!audioCompatibilityPassed ? 'first' : allChecked ? 'Click to begin' : 'first'}</span>
                 </>
               )}
             </div>

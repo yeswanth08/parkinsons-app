@@ -5,6 +5,7 @@ export interface RecordingState {
   audioURL: string | null
   recordingTime: number
   isAnalyzing: boolean
+  audioCompatibilityPassed: boolean
 }
 
 const initialState: RecordingState = {
@@ -12,6 +13,7 @@ const initialState: RecordingState = {
   audioURL: null,
   recordingTime: 0,
   isAnalyzing: false,
+  audioCompatibilityPassed: false,
 }
 
 const recordingSlice = createSlice({
@@ -39,6 +41,10 @@ const recordingSlice = createSlice({
       state.audioURL = null
       state.recordingTime = 0
       state.isAnalyzing = false
+      state.audioCompatibilityPassed = false
+    },
+    setAudioCompatibilityPassed: (state, action: PayloadAction<boolean>) => {
+      state.audioCompatibilityPassed = action.payload
     },
   },
 })
@@ -50,6 +56,7 @@ export const {
   setRecordingTime,
   setIsAnalyzing,
   resetRecording,
+  setAudioCompatibilityPassed,
 } = recordingSlice.actions
 
 export default recordingSlice.reducer
