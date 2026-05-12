@@ -599,8 +599,14 @@ function RecordingPanel({ onBack, onTestAgain }: { onBack: () => void; onTestAga
   }
 
   const handleStartRecording = async () => {
+    console.log("[v0] handleStartRecording called - isFormSubmitted:", isFormSubmitted, "audioCompatibilityPassed:", audioCompatibilityPassed, "showCompatibilityTest:", showCompatibilityTest)
     if (!isFormSubmitted) { setShowForm(true); return }
-    if (!audioCompatibilityPassed) { setShowCompatibilityTest(true); return }
+    if (!audioCompatibilityPassed) { 
+      console.log("[v0] About to set showCompatibilityTest to true")
+      setShowCompatibilityTest(true); 
+      return 
+    }
+    console.log("[v0] Both checks passed, starting recording")
     if (isActiveRef.current) return
 
     try {
